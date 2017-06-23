@@ -1,5 +1,6 @@
 package com.simple.server.config;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationListener;
@@ -38,7 +39,7 @@ public class PostInit implements ApplicationListener<ContextRefreshedEvent> {
 		appConfig.initQueueClientMsg(initQueueSizeClientMsg);
 		appConfig.initQueueDirtyMsg(initQueueSizeDirtyMsg);
 		appConfig.initQueueDirtyPlainText(initQueueSizeDirtyPlainText);
-		
+				
 		taskRunner.initProcessing();
 	}
 }

@@ -21,8 +21,7 @@
 	
 	
 	
-	<!-- Thymeleaf -->
-	
+	<!-- Thymeleaf -->	
 	<beans:bean id="templateResolver" class="org.thymeleaf.spring4.templateresolver.SpringResourceTemplateResolver">
         <beans:property name="prefix" value="/WEB-INF/views/" />
         <beans:property name="suffix" value=".html" />	
@@ -107,11 +106,11 @@
         </property>
     </bean>
 	-->
-	
+	<!--
 	<mvc:interceptors>
       <beans:bean class="com.simple.server.controller.interceptor.Interceptor" />
 	</mvc:interceptors> 
-	
+	-->
 	<beans:import resource="subscribe-settings.xml"/>	
 	<beans:import resource="outbound-gateway-scheme.xml"/>
 	<beans:import resource="jms-invoke-settings.xml"/>

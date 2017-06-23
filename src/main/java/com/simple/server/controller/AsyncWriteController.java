@@ -1,8 +1,6 @@
 package com.simple.server.controller;
 
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +17,6 @@ import com.simple.server.config.AppConfig;
 import com.simple.server.config.EndpointType;
 import com.simple.server.config.OperationType;
 import com.simple.server.domain.contract.BusClassificator;
-import com.simple.server.domain.contract.SorderMsg;
 import com.simple.server.domain.contract.StatusMsg;
 import com.simple.server.domain.contract.BusTagTemplate;
 import com.simple.server.domain.contract.BusWriteMsg;
@@ -35,24 +32,6 @@ public class AsyncWriteController {
 	@Autowired
 	private AppConfig appConfig;
 		
-	@RequestMapping(value = "json/nav/so", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public StatusMsg jsonNavSo(@RequestBody SorderMsg so) {	
-		try {																	
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());					
-			so.setMethodHandler("async/post/json/nav/so");
-			so.setChannel(appConfig.getChannelBusBridge());
-			so.setLogClass(BusWriteMsg.class);
-			so.setEndPointId(EndpointType.NAV);
-			so.setOperationType(OperationType.WRITE);
-			so.setRequestInDatetime(DateTimeConverter.getCurDate());
-			so.setJuuid(UUID.randomUUID().toString());			
-			appConfig.getQueueDirtyMsg().put(so);	
-			return appConfig.getSuccessStatus();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new StatusMsg("406", e.toString());
-		}
-	}
 	
 	@RequestMapping(value = "text/nav/so", method = RequestMethod.POST, consumes = MediaType.TEXT_PLAIN_VALUE)
 	public StatusMsg textNavSo(HttpServletRequest request, HttpServletResponse response) {	

@@ -93,8 +93,7 @@ public class AsyncPubController {
 	@RequestMapping(value = "nav/pub/success", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg jsonNavPubSuccess(@RequestBody SuccessPubMsg msg) {
 		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("nav pub success catch ::::: " + msg);
+			Thread.currentThread().sleep(Timing.getTimeMaxSleep());			
 			msg.setMethodHandler("nav/pub/success");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusWriteMsg.class);
@@ -112,8 +111,7 @@ public class AsyncPubController {
 	@RequestMapping(value = "nav/pub/err", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg jsonNavPubErr(@RequestBody ErrPubMsg msg) {
 		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("nav pub err catch ::::: " + msg);
+			Thread.currentThread().sleep(Timing.getTimeMaxSleep());			
 			msg.setMethodHandler("nav/pub/err");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusWriteMsg.class);
@@ -131,8 +129,7 @@ public class AsyncPubController {
 	@RequestMapping(value = "nav/pub/confirm", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg jsonConfirm(@RequestBody ConfirmMsg confirm) {
 		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("nav pub confirmation ::::: " + confirm);
+			Thread.currentThread().sleep(Timing.getTimeMaxSleep());			
 			confirm.setMethodHandler("/async/json/sub/confirm");
 			confirm.setChannel(appConfig.getChannelBusBridge());
 			confirm.setLogClass(BusSubMsg.class);
@@ -150,8 +147,7 @@ public class AsyncPubController {
 	@RequestMapping(value = "oktell/uni/listener", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg jsonOktellListener(@RequestBody UniMinMsg msg) {
 		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("oktell listener catch ::::: " + msg);
+			Thread.currentThread().sleep(Timing.getTimeMaxSleep());			
 			IncomingBufferMsg in = new IncomingBufferMsg();
 			in.copyFrom(msg);
 
@@ -173,7 +169,6 @@ public class AsyncPubController {
 	public StatusMsg jsonBtxListener(@RequestBody UniMinMsg msg) {
 		try {
 			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("btx listener catch ::::: " + msg);
 			IncomingBufferMsg in = new IncomingBufferMsg();
 			in.copyFrom(msg);
 
@@ -195,7 +190,6 @@ public class AsyncPubController {
 	public void jsonBtxListener2(@RequestBody UniMinMsg msg) {
 		try {
 			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("btx listener2 catch ::::: " + msg);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -206,7 +200,6 @@ public class AsyncPubController {
 	public StatusMsg jsonOktellSubErr(@RequestBody ErrSubMsg msg) {
 		try {
 			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("oktell sub err catch ::::: " + msg);
 			msg.setMethodHandler("oktell/sub/err");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusWriteMsg.class);
@@ -225,7 +218,6 @@ public class AsyncPubController {
 	public StatusMsg jsonBtxSubErr(@RequestBody ErrSubMsg msg) {
 		try {
 			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
-			System.out.println("btx sub err catch ::::: " + msg);
 			msg.setMethodHandler("btx/sub/err");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusWriteMsg.class);

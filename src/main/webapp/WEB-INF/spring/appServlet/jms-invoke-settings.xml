@@ -13,20 +13,16 @@
         <constructor-arg value="amq.bridge.sync.queue"/>
     </bean>
     
-
-    <bean id="syncLog" class="org.apache.activemq.command.ActiveMQQueue">
-        <constructor-arg value="amq.log.sync.queue"/>
-    </bean>
-    
-   
-
-	<bean id="remoteService"
+    <bean id="remoteService"
             class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
         <property name="serviceInterface" value="com.simple.server.service.remote.IRemoteService"/>
         <property name="connectionFactory" ref="syncConnectionFactory"/>
         <property name="queue" ref="syncBridge"/>
     </bean>
-	
+    
+    <bean id="syncLog" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="amq.log.sync.queue"/>
+    </bean>    
 	
 	<bean id="remoteLogService"
            class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
@@ -34,4 +30,5 @@
        <property name="connectionFactory" ref="syncConnectionFactory"/>
        <property name="queue" ref="syncLog"/>
     </bean>
+
 </beans>

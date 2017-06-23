@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -20,8 +19,6 @@ import org.springframework.stereotype.Service;
 @Service("DispatcherTask")
 @Scope("prototype")
 public class DispatcherTask extends AbstractTask {
-
-	public static volatile AtomicInteger count = new AtomicInteger();
 	
 	@Autowired
 	private AppConfig appConfig;

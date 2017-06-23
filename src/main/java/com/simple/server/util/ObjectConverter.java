@@ -106,4 +106,12 @@ public class ObjectConverter {
 		return obj;
 	}
 	
+	public static String objectToXml(Object object) throws Exception{
+		XmlMapper xmlMapper = new XmlMapper();
+		xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
+		String xml = xmlMapper.writeValueAsString(object);		
+		return xml;
+	}
+	
+	
 }

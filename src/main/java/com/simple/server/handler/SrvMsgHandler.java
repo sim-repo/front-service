@@ -7,7 +7,7 @@ public class SrvMsgHandler extends AbstractMsgHandler{
 	
 
 	public void handleSrvJsonMsg(String json) throws Exception {
-		System.out.println("front::::handleSrvJsonMsg "+json);
+		// TODO Auto-generated method stub
 	}	
 
 

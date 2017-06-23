@@ -14,7 +14,6 @@ import com.simple.server.config.AppConfig;
 import com.simple.server.config.EndpointType;
 import com.simple.server.config.OperationType;
 import com.simple.server.domain.contract.BusReadMsg;
-import com.simple.server.domain.contract.SorderMsg;
 import com.simple.server.domain.contract.BusReportMsg;
 import com.simple.server.domain.contract.StatusMsg;
 import com.simple.server.statistics.time.Timing;
@@ -29,24 +28,6 @@ public class AsyncReadController {
 
 	@Autowired
 	private AppConfig appConfig;
-	
-	
-	@RequestMapping(value = "json/nav/so", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public StatusMsg jsonNavSoGet(@RequestBody SorderMsg so) {		
-		try {																					
-					
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());					
-			so.setMethodHandler("/async/get/json/nav/so");			
-			so.setChannel(appConfig.getChannelBusBridge());
-			so.setLogClass(BusReadMsg.class);
-			so.setJuuid(UUID.randomUUID().toString());			
-			appConfig.getQueueDirtyMsg().put(so);					
-			return appConfig.getSuccessStatus();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new StatusMsg("406", e.toString());
-		}
-	}
 	
 	@RequestMapping(value = "json/nav/tag", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg  jsonNavTagGet(@RequestBody BusReportMsg req){				
