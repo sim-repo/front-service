@@ -44,18 +44,17 @@
 		<constructor-arg value="amq.bridge.async.bus.queue"/>
 	</bean>
 
-	<int-jms:outbound-gateway id="businessBridgeGateway" 
-		request-channel="channelBusBridge"
-		request-destination="bbq"
-		connection-factory="outboundConnectionFactory" async="true"
-		requires-reply="false" receive-timeout="1" reply-timeout="1" />			
-		
-	<int-jms:outbound-gateway id="businessLogGateway" 
-		request-channel="channelBusLog"
-		request-destination="blq"
+	<int-jms:outbound-gateway id="businessBridgeGateway"
+		request-channel="channelBusBridge" request-destination="bbq"
+		connection-factory="outboundConnectionFactory" requires-reply="false"
+		async="true" receive-timeout="1" reply-timeout="1" />
+
+
+	<int-jms:outbound-gateway id="businessLogGateway"
+		request-channel="channelBusLog" request-destination="blq"
 		connection-factory="outboundConnectionFactory" async="true"
 		requires-reply="false" receive-timeout="1" reply-timeout="1" />
-	
-			
-	
+
+
+
 </beans>		

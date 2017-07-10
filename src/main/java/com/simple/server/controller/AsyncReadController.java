@@ -40,7 +40,7 @@ public class AsyncReadController {
 			req.setChannel(appConfig.getChannelBusBridge());
 			req.setRequestInDatetime(DateTimeConverter.getCurDate());
 			req.setJuuid(UUID.randomUUID().toString());						
-			appConfig.getQueueDirtyMsg().put(req);					
+			appConfig.getQueueDirtyMsg().add(req);					
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();

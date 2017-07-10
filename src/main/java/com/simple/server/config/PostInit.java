@@ -19,16 +19,16 @@ public class PostInit implements ApplicationListener<ContextRefreshedEvent> {
 	@Autowired
 	AppConfig appConfig;	  
 	  
-	@Value("${queueSizeAdminMsg.int.property :100}")
+	@Value("${queueSizeAdminMsg.int.property :1000}")
 	private int initQueueSizeAdminMsg;
 	
-	@Value("${queueSizeClientMsg.int.property :100}")
+	@Value("${queueSizeClientMsg.int.property :10000}")
 	private int initQueueSizeClientMsg;
 	  
-	@Value("${queueSizeDirtyMsg.int.property :100}")
+	@Value("${queueSizeDirtyMsg.int.property :10000}")
 	private int initQueueSizeDirtyMsg;
 	   
-	@Value("${queueSizeDirtyPlainText.int.property :100}")
+	@Value("${queueSizeDirtyPlainText.int.property :10000}")
 	private int initQueueSizeDirtyPlainText;
 	
 

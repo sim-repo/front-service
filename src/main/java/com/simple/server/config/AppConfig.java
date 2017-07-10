@@ -59,10 +59,10 @@ public class AppConfig {
 	
 	ConcurrentHashMap<String,RedirectRouting> redirectRoutingsHashMap = new ConcurrentHashMap<String, RedirectRouting>();
 	
-    private LinkedBlockingQueue<IContract> queueDirtyPlainText = new LinkedBlockingQueue<>(100);
-    private LinkedBlockingQueue<IContract> queueDirtyMsg = new LinkedBlockingQueue<>(100);
-    private LinkedBlockingQueue<IContract> queueClientMsg = new LinkedBlockingQueue<>(100);
-    private LinkedBlockingQueue<IContract> queueAdminMsg = new LinkedBlockingQueue<>(10);
+    private LinkedBlockingQueue<IContract> queueDirtyPlainText;
+    private LinkedBlockingQueue <IContract> queueDirtyMsg;
+    private LinkedBlockingQueue<IContract> queueClientMsg;
+    private LinkedBlockingQueue<IContract> queueAdminMsg;
          
 	private Mediator mediator = new Mediator();    	        
     private StatusMsg successStatus = new StatusMsg("202","Accepted");   
@@ -89,7 +89,7 @@ public class AppConfig {
 		return queueDirtyPlainText;
 	}
 
-	public LinkedBlockingQueue<IContract> getQueueDirtyMsg() {
+	public LinkedBlockingQueue <IContract> getQueueDirtyMsg() {
 		return queueDirtyMsg;
 	}		
 

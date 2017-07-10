@@ -54,7 +54,7 @@ public class AsyncWriteController {
 			tag.setOperationType(OperationType.WRITE);
 			tag.setRequestInDatetime(DateTimeConverter.getCurDate());
 			tag.setJuuid(UUID.randomUUID().toString());						
-			appConfig.getQueueDirtyMsg().put(tag);	
+			appConfig.getQueueDirtyMsg().add(tag);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -74,7 +74,7 @@ public class AsyncWriteController {
 			classificator.setOperationType(OperationType.WRITE);
 			classificator.setRequestInDatetime(DateTimeConverter.getCurDate());
 			classificator.setJuuid(UUID.randomUUID().toString());									
-			appConfig.getQueueDirtyMsg().put(classificator);
+			appConfig.getQueueDirtyMsg().add(classificator);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {	
 			e.printStackTrace();

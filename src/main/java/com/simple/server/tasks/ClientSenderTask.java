@@ -49,18 +49,15 @@ public class ClientSenderTask extends AbstractTask {
     public void task() throws Exception {  
         if(appConfig.getQueueClientMsg().drainTo(list, MAX_NUM_ELEMENTS)==0){
             list.add(appConfig.getQueueClientMsg().take());
-        }
-             
+        }             
         Thread.currentThread().sleep(Timing.getTimeMaxSleep());		
-        appConfig.getQueueClientMsg().drainTo(list, MAX_NUM_ELEMENTS);  
-  
+        appConfig.getQueueClientMsg().drainTo(list, MAX_NUM_ELEMENTS);  	     
         for (IContract msg : list) {        	
-        	Thread.currentThread().sleep(Timing.getTimeMaxSleep());		   
         	msg.setRequestInDatetime(DateTimeConverter.getCurDate());        	             	
-        	appConfig.getLogBusMsgService().transformAndSend(appConfig.getChannelBusLog(), (AContract)msg);          	
+        	appConfig.getLogBusMsgService().transformAndSend(appConfig.getChannelBusLog(), (AContract)msg);  
+        	Thread.currentThread().sleep(Timing.getTimeMaxSleep());
         	appConfig.getBusMsgService().send(msg.getChannel(), msg.getMethodHandler(), msg);		
-        }
-                   
+        }                   
         throwToStatistic(list.size());
         list.clear();
     }

@@ -8,7 +8,7 @@ import java.util.TimerTask;
 import com.simple.server.statistics.Statistic;
 
 public class Timing extends TimerTask {
-    public static final Long TIME_MAX_SLEEP = 1l;
+    public static final Long TIME_MAX_SLEEP = 15l;
     private List<Statistic> statistics = new ArrayList<>();
 
     public Timing(Statistic statistic) {

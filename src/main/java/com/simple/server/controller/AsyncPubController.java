@@ -18,6 +18,7 @@ import com.simple.server.domain.contract.BusWriteMsg;
 import com.simple.server.domain.contract.ConfirmMsg;
 import com.simple.server.domain.contract.ErrPubMsg;
 import com.simple.server.domain.contract.ErrSubMsg;
+import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.IncomingBufferMsg;
 import com.simple.server.domain.contract.StatusMsg;
 import com.simple.server.domain.contract.SuccessPubMsg;
@@ -37,15 +38,18 @@ public class AsyncPubController {
 	
 	private final static String CONFIRM = "CONFIRM"; 
 	
+	private void addQueue(IContract msg) throws Exception{
+		appConfig.getQueueDirtyMsg().put(msg);
+	}
+	
 	@RequestMapping(value = "json/pub/uni", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public StatusMsg jsonPub(@RequestBody UniMsg msg) {
 		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());
 			msg.setMethodHandler("/async/json/pub/uni");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusPubMsg.class);
-			msg.setOperationType(OperationType.PUB);
-			appConfig.getQueueDirtyMsg().put(msg);
+			msg.setOperationType(OperationType.PUB);			
+			addQueue(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -55,15 +59,13 @@ public class AsyncPubController {
 
 	@RequestMapping(value = "xml/pub/uni", method = RequestMethod.POST, consumes = MediaType.APPLICATION_XML_VALUE)
 	public StatusMsg xmlPub(HttpServletRequest request, @RequestBody String xml) {
-		try {
-			Thread.currentThread().sleep(Timing.getTimeMaxSleep());	
+		try {			
 			UniMsg msg = (UniMsg)ObjectConverter.xmlToObject(xml, UniMsg.class);			
 			msg.setMethodHandler("/async/json/pub/uni");
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusPubMsg.class);
-			msg.setOperationType(OperationType.PUB);
-			
-			appConfig.getQueueDirtyMsg().put(msg);
+			msg.setOperationType(OperationType.PUB);		
+			addQueue(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -82,7 +84,7 @@ public class AsyncPubController {
 			status.setOperationType(OperationType.SUB);
 			status.setEventId(CONFIRM);
 			
-			appConfig.getQueueDirtyMsg().put(status);
+			addQueue(status);			
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -100,7 +102,7 @@ public class AsyncPubController {
 			msg.setOperationType(OperationType.WRITE);
 			msg.setEndPointId(EndpointType.NAV);
 			msg.setIsDirectInsert(true);
-			appConfig.getQueueDirtyMsg().put(msg);
+			addQueue(msg);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -118,7 +120,7 @@ public class AsyncPubController {
 			msg.setOperationType(OperationType.WRITE);
 			msg.setEndPointId(EndpointType.NAV);
 			msg.setIsDirectInsert(true);
-			appConfig.getQueueDirtyMsg().put(msg);
+			addQueue(msg);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -136,7 +138,7 @@ public class AsyncPubController {
 			confirm.setOperationType(OperationType.WRITE);
 			confirm.setEndPointId(EndpointType.NAV);
 			confirm.setIsDirectInsert(true);
-			appConfig.getQueueDirtyMsg().put(confirm);
+			addQueue(confirm);				
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -157,7 +159,7 @@ public class AsyncPubController {
 			in.setOperationType(OperationType.WRITE);
 			in.setEndPointId(EndpointType.OKTELL);
 			in.setIsDirectInsert(false);
-			appConfig.getQueueDirtyMsg().put(in);
+			addQueue(in);				
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -178,7 +180,7 @@ public class AsyncPubController {
 			in.setOperationType(OperationType.WRITE);
 			in.setEndPointId(EndpointType.BTX);
 			in.setIsDirectInsert(false);
-			appConfig.getQueueDirtyMsg().put(in);
+			addQueue(in);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -206,7 +208,7 @@ public class AsyncPubController {
 			msg.setOperationType(OperationType.WRITE);
 			msg.setEndPointId(EndpointType.OKTELL);
 			msg.setIsDirectInsert(true);
-			appConfig.getQueueDirtyMsg().put(msg);
+			addQueue(msg);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -224,7 +226,7 @@ public class AsyncPubController {
 			msg.setOperationType(OperationType.WRITE);
 			msg.setEndPointId(EndpointType.BTX);
 			msg.setIsDirectInsert(true);
-			appConfig.getQueueDirtyMsg().put(msg);
+			addQueue(msg);	
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
 			e.printStackTrace();

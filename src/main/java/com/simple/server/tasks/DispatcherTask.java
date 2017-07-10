@@ -46,23 +46,25 @@ public class DispatcherTask extends AbstractTask {
 
     
 	@Override
-    public void task() throws Exception {
-        if (appConfig.getQueueDirtyMsg().drainTo(list, MAX_NUM_ELEMENTS) == 0) {
-            list.add(appConfig.getQueueDirtyMsg().take());
-        }
-       
-        Thread.currentThread().sleep(Timing.getTimeMaxSleep());	
-        appConfig.getQueueDirtyMsg().drainTo(list, MAX_NUM_ELEMENTS);  
+    public void task() throws Exception {        		
+	   if (appConfig.getQueueDirtyMsg().drainTo(list, MAX_NUM_ELEMENTS) == 0) {
+           list.add(appConfig.getQueueDirtyMsg().take());
+       }
+		
+       Thread.currentThread().sleep(Timing.getTimeMaxSleep());
+       appConfig.getQueueDirtyMsg().drainTo(list, MAX_NUM_ELEMENTS);  
                 
-        for(IContract msg: list) {     
+       for(IContract msg: list) {     
         	if(msg instanceof AContract){        	        
-        		appConfig.getQueueClientMsg().put(msg);
+        		appConfig.getQueueClientMsg().add(msg);
+        		Thread.currentThread().sleep(Timing.getTimeMaxSleep());
+        		
         	}
         	else if(msg instanceof ALogContract){        	        		        			
         		appConfig.getQueueAdminMsg().put(msg);
         	}      		        			        			        	
-        }
-        list.clear();
+       }
+       list.clear();
     }
 
 }

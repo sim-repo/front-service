@@ -25,10 +25,11 @@ public class LogBusMsgService{
 	final private static String LOG_HEADER_NAME = "log"; 
 	final private static String SERVICE_ID = "front"; 
 	
+	//TODO overhead 6-7 sec.
 	public void transformAndSend(MessageChannel msgChannel, AContract msg) throws Exception {		
-		IContract message = newLogMsg(msg);												
-		String json = ObjectConverter.objectToJson(message);
-		msgChannel.send( MessageBuilder.withPayload( json ).setHeader(LOG_HEADER_NAME, msg.getClass().getSimpleName()).build() );					
+		IContract message = newLogMsg(msg);				
+		String json = ObjectConverter.objectToJson(message);			
+		msgChannel.send( MessageBuilder.withPayload( json ).setHeader(LOG_HEADER_NAME, msg.getClass().getSimpleName()).build() );		
 	}
 
 	
