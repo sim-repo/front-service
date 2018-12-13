@@ -1,5 +1,6 @@
 package com.simple.server.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.simple.server.config.AppConfig;
+import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.RedirectRouting;
+import com.simple.server.domain.contract.TimeoutPolicies;
 import com.simple.server.util.ObjectConverter;
 
 
@@ -84,6 +87,8 @@ public class SyncUtilController {
 	}	
 	
 	
+	
+	
 	/**
 	 * <p> Утилита: преобразование XML в JSON через POST-запрос</p>
 	 * @return возвращает JSON</p>
@@ -117,46 +122,48 @@ public class SyncUtilController {
 	 * <p> Вызов: http://msk10websvc2:8888/front/util/cache/allRetranslates </p>
 	 * <p> Используйте для проверки адресации, если возникли проблемы с получением данных  </p>
 	 * <p> Внутренняя настроечная таблица: [router redirect] </p>
+	 * @return возвращает JSON</p>
 	 * @author Иванов И.
-	 * @version 1.0	 	 
-	 * @return [URL шины]---------------[URL клиентской системы, к которой происходит обращение]  	
-	 *  <p>  /sync/get/json/bpm/clientMatrixes---------------https://crm.simple.ru/0/ServiceModel/TestDataService.svc/GetClientMatrixes</p>
-	 * 	<p> здесь для получения данных по клиентским матрицам из CRM используется URL клиентской системы https://crm.simple.ru/0/ServiceModel/TestDataService.svc/GetClientMatrixes</p>
+	 * @version 1.0	 
 	 */
-	@RequestMapping(value = "util/cache/allRetranslates", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRetranslateGet() {		
-		
-		
-		ConcurrentHashMap<String, RedirectRouting> map = new ConcurrentHashMap<String, RedirectRouting>();
-		StringBuilder ret = new StringBuilder();
-		
+	@RequestMapping(value = "util/cache/retranslates", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonRetranslateGet() {				
+		StringBuilder ret = new StringBuilder();		
 		for(Map.Entry<String, RedirectRouting> pair: appConfig.getRedirectRoutingsHashMap().entrySet()){
-			RedirectRouting route = pair.getValue();
-			
+			RedirectRouting route = pair.getValue();			
 			ret.append(pair.getKey()+"---------------"+route.getUrl()+"\n\n\n");
-		}
-		
+		}		
 		return ret.toString();		
 	}
 	
 	
 	/**
-	 * <p> Утилита: получить закэшированный URL отдельной переадресации по ключу</p>
-	 * <p> Вызов: http://msk10websvc2:8888/front/util/cache/check/retranslate?key=[Значение URL шины] </p>
-	 * <p> Используйте для проверки отдельной адресации, если возникли проблемы с получением данных  </p>
-	 * <p> Внутренняя настроечная таблица: [router redirect] </p>
+	 * <p> Утилита: рефрешинг кэша из [router redirect]</p>
 	 * @author Иванов И.
-	 * @version 1.0	 	
-	 * @param key - текст, пример "/sync/get/json/bpm/manager" 
-	 * @return [URL шины]---------------[URL клиентской системы, к которой происходит обращение]  ? key = [URL шины]
-	 * 	<p> пример: узнать какой URL использует шина для получения данных по клиентским матрицам из CRM  </p>
-	 *  <p>  http://msk10websvc2:8888/front/util/cache/check/retranslate?key=/sync/get/json/bpm/clientMatrixes</p>
-	 */	 
-	@RequestMapping(value = "util/cache/check/retranslate", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRetranslateGet(@RequestParam(value = "key", required = true) String key) {								
-		return appConfig.getBusMsgService().checkRetranslate(key);			
+	 * @version 1.0	 	 
+	 */
+	@RequestMapping(value = "util/cache/retranslates/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonRefreshRetranslateGet() {		
+		StringBuilder ret = new StringBuilder();
+		RedirectRouting redirect = null;
+		List<IContract> res = null;
+		try {
+			res = appConfig.getRemoteLogService().getAllMsg(new RedirectRouting());
+		} catch (Exception e) {
+			ret.append(e.getMessage()+"\n\n\n");
+		}		
+		for(IContract msg: res){
+			redirect = (RedirectRouting)msg;
+			appConfig.setRedirectRoutingHashMap(redirect);				
+		}
+						
+		for(Map.Entry<String, RedirectRouting> pair: appConfig.getRedirectRoutingsHashMap().entrySet()){
+			RedirectRouting route = pair.getValue();			
+			ret.append(pair.getKey()+"---------------"+route.getUrl()+"\n\n\n");
+		}
+		
+		return ret.toString();		
 	}
-	
 	
 
 
@@ -177,8 +184,7 @@ public class SyncUtilController {
 		if(eventId != null)
 			sql = new StringBuilder(String.format("CALL `jdb`.`get_log_success_byEventId`('%s');",eventId));
 		else if (juuid != null)
-			sql = new StringBuilder(String.format("CALL `jdb`.`get_log_success_byUUID`('%s');",juuid));
-			
+			sql = new StringBuilder(String.format("CALL `jdb`.`get_log_success_byUUID`('%s');",juuid));			
 		try {
 			String original = appConfig.getRemoteService().getFlatJson(sql.toString(), appConfig.LOG_ENDPOINT_NAME);	
 			res = ObjectConverter.prettyJson(original);		
@@ -209,9 +215,7 @@ public class SyncUtilController {
 		else if (juuid != null)
 			sql = new StringBuilder(String.format("CALL `jdb`.`get_log_err`('','%s');",juuid));
 			
-		try {
-			
-					
+		try {							
 			String original = appConfig.getRemoteService().getFlatJson(sql.toString(), appConfig.LOG_ENDPOINT_NAME);	
 			res = ObjectConverter.prettyJson(original);
 		} catch (Exception e) {
@@ -251,5 +255,65 @@ public class SyncUtilController {
 		}
 		return res;			
 	}
+	
+	
+	/**
+	 * <p> Утилита: получить закэшированный список политики таймаутов </p>
+	 * <p> Вызов: http://msk10websvc2:8888/front/util/cache/allTimeouts </p>
+	 * <p> Используйте для проверки значений таймаутов, используемых в GET- и POST-запросах  </p>
+	 * <p> Внутренняя настроечная таблица: [timeout policies] </p>
+	 * @return возвращает JSON</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 */
+	@RequestMapping(value = "util/cache/timeouts", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonTimeoutsGet() {		
+		StringBuilder ret = new StringBuilder();
+		
+		ret.append("front_sync_read_timeout:"+appConfig.timeoutPolicies.getFrontSyncReadTimeout()+"\n\n\n");
+		ret.append("front_sync_connection_request_timeout:"+appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout()+"\n\n\n");
+		ret.append("front_sync_connection_timeout:"+appConfig.timeoutPolicies.getFrontSyncConnectionTimeout()+"\n\n\n");
+		ret.append("back_async_read_timeout:"+appConfig.timeoutPolicies.getBackAsyncReadTimeout()+"\n\n\n");
+		ret.append("back_async_connection_request_timeout:"+appConfig.timeoutPolicies.getBackAsyncConnectionRequestTimeout()+"\n\n\n");
+		ret.append("back_async_connection_timeout:"+appConfig.timeoutPolicies.getBackAsyncConnectionTimeout()+"\n\n\n");
+		
+		return ret.toString();		
+	}
+	
+	/**
+	 * <p> Утилита: рефрешинг кэша из [timeout policies]</p>
+	 * @author Иванов И.
+	 * @version 1.0	 	 
+	 */
+	@RequestMapping(value = "/util/cache/timeouts/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonRefresTimeoutsGet() {		
+		StringBuilder ret = new StringBuilder();
+		
+		List<IContract> res3 = null;
+		try {
+			res3 = appConfig.getRemoteLogService().getAllMsg(new TimeoutPolicies());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			ret.append(e.getMessage()+"\n\n\n");
+		}		
+		for(IContract msg: res3){			
+			appConfig.timeoutPolicies = (TimeoutPolicies)msg;				
+		}
+						
+		ret.append("front_sync_read_timeout:"+appConfig.timeoutPolicies.getFrontSyncReadTimeout()+"\n\n\n");
+		ret.append("front_sync_connection_request_timeout:"+appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout()+"\n\n\n");
+		ret.append("front_sync_connection_timeout:"+appConfig.timeoutPolicies.getFrontSyncConnectionTimeout()+"\n\n\n");
+		ret.append("back_async_read_timeout:"+appConfig.timeoutPolicies.getBackAsyncReadTimeout()+"\n\n\n");
+		ret.append("back_async_connection_request_timeout:"+appConfig.timeoutPolicies.getBackAsyncConnectionRequestTimeout()+"\n\n\n");
+		ret.append("back_async_connection_timeout:"+appConfig.timeoutPolicies.getBackAsyncConnectionTimeout()+"\n\n\n");
+		
+		return ret.toString();		
+	}
+	
+	
+	
+	
+	
+	
 	
 }

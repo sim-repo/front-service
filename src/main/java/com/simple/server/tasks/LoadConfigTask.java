@@ -13,6 +13,7 @@ import com.simple.server.config.AppConfig;
 import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.SessionFactory;
+import com.simple.server.domain.contract.TimeoutPolicies;
 import com.simple.server.mediators.CommandType;
 
 
@@ -50,14 +51,17 @@ public class LoadConfigTask  extends AbstractTask {
 		      
 		List<IContract> res = null;
 		List<IContract> res2 = null;
+		List<IContract> res3 = null;
 		RedirectRouting redirect = null;
 		SessionFactory sf = null;
 		
 		setDeactivateMySelfAfterTaskDone(true);
 		
-		Thread.currentThread().sleep(4000);		
+		Thread.currentThread().sleep(5000);		
 		
 		try {			
+			
+			System.out.println(">>>> FRONT-SERVICE::::LOADING CONFIG >>>>");
 			
 			res = appConfig.getRemoteLogService().getAllMsg(new RedirectRouting());
 			System.out.println("redirect routings size: "+res.size());
@@ -74,8 +78,22 @@ public class LoadConfigTask  extends AbstractTask {
 				if(sf.getDefaultEndpointId())
 					appConfig.setSessionFactories(sf.getEndpointGroupId(), sf.getEndpointId());			
 			}
-									
 			
+			res3 = appConfig.getRemoteLogService().getAllMsg(new TimeoutPolicies());
+			System.out.println("timeout policies size: "+res3.size());
+			for(IContract msg: res3){			
+				appConfig.timeoutPolicies = (TimeoutPolicies)msg;	
+				System.out.println(String.format("timeout: %s %s %s %s %s %s", 
+						appConfig.timeoutPolicies.getFrontSyncReadTimeout(), 
+						appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout(),
+						appConfig.timeoutPolicies.getFrontSyncConnectionTimeout(),
+						appConfig.timeoutPolicies.getBackAsyncReadTimeout(),
+						appConfig.timeoutPolicies.getBackAsyncConnectionTimeout(),
+						appConfig.timeoutPolicies.getBackAsyncConnectionRequestTimeout()
+						));
+			}
+			
+			System.out.println("<<<< FRONT-SERVICE::::LOADING CONFIG COMPLETE <<<<<");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}		      			

@@ -27,6 +27,9 @@ public class BusMsgService  implements IMsgService{
 	@Autowired
 	private AppConfig appConfig;
 	
+	@Autowired
+	private HttpImpl httpImpl;
+	
 	@Override
 	public void send(MessageChannel msgChannel, IContract msg) throws Exception {
 		
@@ -67,8 +70,12 @@ public class BusMsgService  implements IMsgService{
 		ResponseEntity<String> res = null;
 		try {
 			if (appConfig.getRedirectRoutingsHashMap().containsKey(key)) {								
-				RedirectRouting redirect = appConfig.getRedirectRoutingsHashMap().get(key);				
-				res = HttpImpl.get(redirect, params);							
+				RedirectRouting redirect = appConfig.getRedirectRoutingsHashMap().get(key);			
+				if (redirect.getIsPost()){
+					res = httpImpl.doPost(redirect, params);
+				} else {
+					res = httpImpl.get(redirect, params);
+				}
 			}
 		} catch (HttpStatusCodeException e) {
 			e.printStackTrace();
@@ -84,15 +91,13 @@ public class BusMsgService  implements IMsgService{
 	@Override
 	public @ResponseBody String checkRetranslate(String key){
 		
-		ResponseEntity<String> res = null;
-		
-			if (appConfig.getRedirectRoutingsHashMap().containsKey(key)) {								
-				RedirectRouting redirect = appConfig.getRedirectRoutingsHashMap().get(key);		
-				if(redirect.getUrl()!=null)
-					return redirect.getUrl();
-				return "url not found";
-			}		
+		if (appConfig.getRedirectRoutingsHashMap().containsKey(key)) {								
+			RedirectRouting redirect = appConfig.getRedirectRoutingsHashMap().get(key);		
+			if(redirect.getUrl()!=null)
+				return redirect.getUrl();
 			return "url not found";
+		}		
+		return "url not found";
 	}
 	
 }

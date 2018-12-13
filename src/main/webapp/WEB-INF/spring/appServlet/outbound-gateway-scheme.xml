@@ -55,7 +55,6 @@
 		request-destination="blq"
 		connection-factory="outboundConnectionFactory" async="true"
 		requires-reply="false" receive-timeout="1" reply-timeout="1" />
-	
-			
-	
+
+
 </beans>		

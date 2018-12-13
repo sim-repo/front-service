@@ -125,6 +125,34 @@ public class SyncReadController {
 		
 		logger.debug(String.format("SyncCtrl %s,  %s, thread id: %s , body: %s", System.currentTimeMillis(), url,  Thread.currentThread().getId(), bodySubstring));
 	}
+	
+	
+	
+	/**
+	 * <p> ЛК: Источник данных NAV: разделенные строки заказа продажи, сгруппированные по категориям </p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 * @param endpointId - инстанс СУБД: NAV, NAV_COPY, NAV_LK, не обязательно	
+	 * @return JSON 		 		
+	 */	
+	@RequestMapping(value = "/sync/post/json/btx/psw", method = RequestMethod.POST, consumes = MediaType.TEXT_PLAIN_VALUE)
+	public @ResponseBody String jsonBtxPswPost(HttpServletRequest request, @RequestBody String body,
+			@RequestParam(value = "endpointId", required = false) String endpointId) {
+
+		String key = "/sync/post/json/btx/psw";
+
+		ResponseEntity<String> res = null;
+		try {
+			res = appConfig.getBusMsgService().retranslate(key, body);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+		return res.getBody();
+	}
+	
+	
+	
 
 	/**
 	 * <p> * Источник данных BTX ЛК: проверка логина в Битриксе </p>
@@ -421,6 +449,9 @@ public class SyncReadController {
 	}
 	
 	
+
+	
+	
 	/**
 	 * <p> * Источник данных BPM: возвращает баннеры по клиенту </p>
 	 * @author Иванов И.
@@ -491,6 +522,9 @@ public class SyncReadController {
 		return res;
 	}
 
+	
+	
+	
 
 	
 	/**
@@ -673,7 +707,7 @@ public class SyncReadController {
 				String.format("EXEC [dbo].[sp_GetMotivatonCard] @EmpCode = '%s', @OnDate='%s'", emplId, DateTimeConverter.dateToSQLFormat(date)));
 		String res = null;
 		try {
-			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
+			res = appConfig.getRemoteService().getFlatXml(sql.toString(), 
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
 			e.printStackTrace();

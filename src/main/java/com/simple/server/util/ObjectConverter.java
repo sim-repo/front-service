@@ -108,6 +108,14 @@ public class ObjectConverter {
 	}
 	
 	
+	public static String objectToXml(Object object, Boolean useDeclaration) throws Exception{
+		XmlMapper xmlMapper = new XmlMapper();
+		xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, useDeclaration);
+		String xml = xmlMapper.writer().withRootName("Message").writeValueAsString(object);		
+		return xml;
+	}
+	
+	
 	
 	public synchronized static String jsonToXml(String json, Boolean useDeclaration) throws Exception{
 		ObjectMapper mapper = new ObjectMapper();

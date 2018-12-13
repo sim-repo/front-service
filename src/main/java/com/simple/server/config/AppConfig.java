@@ -16,6 +16,7 @@ import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.SessionFactory;
 import com.simple.server.domain.contract.StatusMsg;
+import com.simple.server.domain.contract.TimeoutPolicies;
 import com.simple.server.mediators.Mediator;
 import com.simple.server.mediators.Subscriber;
 import com.simple.server.service.BusMsgService;
@@ -71,7 +72,10 @@ public class AppConfig {
 	@Autowired
 	private ReaderServiceImpl readerService;
 	
-	ConcurrentHashMap<String,RedirectRouting> redirectRoutingsHashMap = new ConcurrentHashMap<String, RedirectRouting>();	
+	public TimeoutPolicies timeoutPolicies = new TimeoutPolicies();
+	
+	
+	ConcurrentHashMap<String,RedirectRouting> redirectRoutingsHashMap = new ConcurrentHashMap<String, RedirectRouting>();		
 	ConcurrentHashMap<String, String> sessionFactories = new ConcurrentHashMap<String, String>();
 	
 	
@@ -115,6 +119,9 @@ public class AppConfig {
 		this.redirectRoutingsHashMap.put(routing.getMethodName(), routing);		
 	}
 	
+	
+	
+
 	public ApplicationContext getApplicationContext() {
 		return ctx;
 	}

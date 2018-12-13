@@ -33,7 +33,9 @@ public class AsyncPubController {
 	@Autowired
 	private AppConfig appConfig;
 	
-	 private AtomicInteger cnt =  new AtomicInteger(0);
+	private AtomicInteger cnt =  new AtomicInteger(0);
+	
+	
 	
 	@RequestMapping(value = "json/pub/uni", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> jsonPub(@RequestBody UniMsg msg) {

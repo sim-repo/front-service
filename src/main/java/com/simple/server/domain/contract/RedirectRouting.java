@@ -14,6 +14,8 @@ public class RedirectRouting extends ALogContract{
 	protected String methodName;	
 	protected String url;	
 	protected Boolean useAuth;
+	protected Boolean isPost;
+	protected String contentType;
 	
 	@Override
 	public String getClazz() {
@@ -51,12 +53,31 @@ public class RedirectRouting extends ALogContract{
 	public void setUseAuth(Boolean useAuth) {
 		this.useAuth = useAuth;
 	}
+	
+	public Boolean getIsPost() {
+		return isPost;
+	}
+
+	public void setIsPost(Boolean isPost) {
+		this.isPost = isPost;
+	}
+	
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+	
+	
 
 	@Override
 	public String toString() {
 		return "RedirectRouting [id=" + id + ", methodName=" + methodName + ", url=" + url + ", useAuth=" + useAuth
-				+ "]";
+				+ ", isPost=" + isPost + "]";
 	}
+	
 	
 	
 	
