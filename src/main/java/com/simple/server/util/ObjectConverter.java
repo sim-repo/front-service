@@ -3,12 +3,14 @@ package com.simple.server.util;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.json.XML;
 import org.w3c.dom.Document;
@@ -49,6 +51,31 @@ import javax.xml.xpath.XPathFactory;
 public class ObjectConverter {
 	private ObjectConverter(){}
 		
+	
+	public static boolean isValidJSON(final String json) throws IOException {
+	    boolean valid = true;
+	    ObjectMapper mapper = new ObjectMapper();
+	    try{ 
+	    	mapper.readTree(json);
+	    } catch(JsonProcessingException e){
+	        valid = false;
+	    }
+	    return valid;
+	}
+	
+	
+	public static boolean isValidXML(final String xml) throws Exception{
+		 boolean valid = true;
+		 DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		 DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		 try {
+			 Document doc = dBuilder.parse(xml);
+		 }catch(Exception e) {
+			 valid = false;
+		 }
+		 return valid;
+	}
+	
 	public static String objectToJson(Object object){
 		StringWriter writer = new StringWriter();
 		ObjectMapper mapper = new ObjectMapper();
@@ -233,5 +260,13 @@ public class ObjectConverter {
         }
             return "";    
     }
+	
+	public static String base64Decode(String str) {
+		if (Base64.isBase64(str)) {	
+			byte[] converted = Base64.decodeBase64(str.getBytes());
+			str = new String(converted, StandardCharsets.UTF_8);
+		}
+		return str;
+	}
 	
 }

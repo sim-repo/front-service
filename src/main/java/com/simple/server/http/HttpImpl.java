@@ -54,20 +54,15 @@ import com.simple.server.util.ObjectConverter;
 
 import org.springframework.http.MediaType;
 
-
-
 @Service("httpImpl")
 @Scope("singleton")
 public class HttpImpl {
 
-	
 	@Autowired
 	private AppConfig appConfig;
-	
+
 	private static final Logger logger = LogManager.getLogger(HttpImpl.class);
-	
-	
-	
+
 	private static String convertBody(ContentType contentType, String body) throws Exception {
 		String converted = null;
 		if (ContentType.XmlPlainText.equals(contentType)) {
@@ -93,7 +88,7 @@ public class HttpImpl {
 			return "application/json";
 		}
 	}
-	
+
 	private static void checkHttpResonseStatusCode(String url, int statusCode) throws HttpNotFoundException {
 		if (statusCode < 200 || statusCode > 300)
 			throw new HttpNotFoundException(String.format("HTTP Error, url: < %s >, status code: %s", url, statusCode));
@@ -110,7 +105,7 @@ public class HttpImpl {
 			}
 		};
 	}
-	
+
 	private static HttpHeaders createHeaders(String contentType) {
 		return new HttpHeaders() {
 			{
@@ -141,18 +136,18 @@ public class HttpImpl {
 
 	private ClientHttpRequestFactory getSimpleClientHttpRequestFactory() {
 		HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-		clientHttpRequestFactory.setConnectionRequestTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() );
-		clientHttpRequestFactory.setConnectTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionTimeout() );
-		clientHttpRequestFactory.setReadTimeout( appConfig.timeoutPolicies.getFrontSyncReadTimeout() );
+		clientHttpRequestFactory
+				.setConnectionRequestTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout());
+		clientHttpRequestFactory.setConnectTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionTimeout());
+		clientHttpRequestFactory.setReadTimeout(appConfig.timeoutPolicies.getFrontSyncReadTimeout());
 		return clientHttpRequestFactory;
 	}
 
 	private ClientHttpRequestFactory getClientHttpRequestFactory() {
 		int timeout = 5000;
 		RequestConfig config = RequestConfig.custom()
-				.setConnectTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() )
-				.setConnectionRequestTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() )
-				.build();
+				.setConnectTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout())
+				.setConnectionRequestTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout()).build();
 		CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
 		return new HttpComponentsClientHttpRequestFactory(client);
 	}
@@ -161,9 +156,6 @@ public class HttpImpl {
 		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 		return new HttpComponentsClientHttpRequestFactory(httpClient);
 	}
-	
-	
-	
 
 	@SuppressWarnings("all")
 	public ResponseEntity<String> doPostNTLM(String url, String body, String contentType) throws Exception {
@@ -184,10 +176,11 @@ public class HttpImpl {
 			HttpPost httpPost = new HttpPost(url);
 
 			httpPost.addHeader("Content-Type", contentType);
-			
+
 			final RequestConfig params = RequestConfig.custom()
-										.setConnectTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionTimeout() )
-										.setConnectionRequestTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() ).build();
+					.setConnectTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionTimeout())
+					.setConnectionRequestTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout())
+					.build();
 			httpPost.setConfig(params);
 
 			// StringEntity entity = new StringEntity(body);
@@ -239,8 +232,6 @@ public class HttpImpl {
 		}
 	}
 
-	
-
 	public ResponseEntity<String> doPost(RedirectRouting redirect, String body) throws Exception {
 
 		ResponseEntity<String> res = null;
@@ -257,15 +248,17 @@ public class HttpImpl {
 					Thread.currentThread().getId()));
 			String convertedBody = HttpImpl.convertBody(redirect.getResponseContentType(), body);
 			if (useAuth) {
-				res = doPostNTLM(redirect.getUrl(), convertedBody, getValidContentType(ContentType.fromValue(redirect.getContentType())));
+				res = doPostNTLM(redirect.getUrl(), convertedBody,
+						getValidContentType(ContentType.fromValue(redirect.getContentType())));
 			} else {
 				ResponseEntity<String> response = null;
 				URI uri = new URI(redirect.getUrl());
 
 				HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-				
-				httpRequestFactory.setConnectionRequestTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() );
-				httpRequestFactory.setConnectTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionTimeout() );
+
+				httpRequestFactory
+						.setConnectionRequestTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout());
+				httpRequestFactory.setConnectTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionTimeout());
 				httpRequestFactory.setReadTimeout(appConfig.timeoutPolicies.getFrontSyncReadTimeout());
 
 				RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
@@ -274,9 +267,9 @@ public class HttpImpl {
 				try {
 					response = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
 					checkHttpResonseStatusCode(uri.toURL().toString(), response.getStatusCode().value());
-									
+
 					return response;
-					
+
 				} catch (RestClientException e) {
 					logger.debug(
 							String.format("[HttpImpl] [ERR] %s %s, thread id: %s , thread name:  %s", uri.toString(),
@@ -287,16 +280,16 @@ public class HttpImpl {
 			}
 
 		} catch (HttpStatusCodeException e) {
-			logger.debug(String.format("front: HttpImpl ERR %s , thread id: %s , thread name:  %s", redirect.getUrl(),
-					Thread.currentThread().getId(), Thread.currentThread().getName()));
-			String json = ObjectConverter.xmlToJson(e.getResponseBodyAsString());
+			logger.debug(String.format("front: HttpImpl ERR %s , %s", redirect.getUrl(), Thread.currentThread().getId(),
+					e.getMessage()));
+			String json = e.getResponseBodyAsString();
+			if (ObjectConverter.isValidXML(json)) {
+				json = ObjectConverter.xmlToJson(json);
+			}
 			return new ResponseEntity<String>(json, createHeaders(), e.getStatusCode());
 		}
 		return res;
 	}
-	
-	
-	
 
 	public ResponseEntity<String> get(RedirectRouting redirect, String params) throws Exception {
 
@@ -324,16 +317,17 @@ public class HttpImpl {
 				res = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
 			}
 		} catch (HttpStatusCodeException e) {
-			logger.debug(String.format("front: HttpImpl ERR %s , thread id: %s , thread name:  %s",
-					redirect.getUrl() + params, Thread.currentThread().getId(), Thread.currentThread().getName()));
-			String json = ObjectConverter.xmlToJson(e.getResponseBodyAsString());
+			logger.debug(String.format("front: HttpImpl ERR %s , %s", redirect.getUrl() + params,
+					Thread.currentThread().getId(), e.getMessage()));
+			String json = e.getResponseBodyAsString();
+			if (ObjectConverter.isValidXML(json)) {
+				json = ObjectConverter.xmlToJson(json);
+			}
 			return new ResponseEntity<String>(json, createHeaders(), e.getStatusCode());
 		}
 		return res;
 	}
 
-	
-	
 	@SuppressWarnings("all")
 	public ResponseEntity<String> doGetNTLM(String url, String contentType) throws Exception {
 
@@ -353,8 +347,8 @@ public class HttpImpl {
 		HttpGet httpGet = new HttpGet(url);
 
 		final RequestConfig params = RequestConfig.custom()
-				.setConnectTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionTimeout() )
-				.setConnectionRequestTimeout( appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout() ).build();
+				.setConnectTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionTimeout())
+				.setConnectionRequestTimeout(appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout()).build();
 		httpGet.setConfig(params);
 
 		CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -388,5 +382,4 @@ public class HttpImpl {
 		return new ResponseEntity<String>(sBody, createHeaders(), HttpStatus.valueOf(httpCode));
 	}
 
-	
 }

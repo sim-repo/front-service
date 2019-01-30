@@ -129,15 +129,19 @@ public class SyncReadController {
 	
 	
 	/**
-	 * <p> ЛК: Источник данных NAV: разделенные строки заказа продажи, сгруппированные по категориям </p>
+	 * <p> ЛК: Источник данных BTX: изменение пароля через POST-запрос </p>
 	 * @author Иванов И.
 	 * @version 1.0	 
-	 * @param endpointId - инстанс СУБД: NAV, NAV_COPY, NAV_LK, не обязательно	
+	 * body:
+	 *  - {
+	 *			  "clientCode": "К07890",
+	 *			  "navDatabase": "Симпл",
+	 *	 		  "clientEmail": "jjj@simple.ru" 
+	 *	   }
 	 * @return JSON 		 		
 	 */	
 	@RequestMapping(value = "/sync/post/json/btx/psw", method = RequestMethod.POST, consumes = MediaType.TEXT_PLAIN_VALUE)
-	public @ResponseBody String jsonBtxPswPost(HttpServletRequest request, @RequestBody String body,
-			@RequestParam(value = "endpointId", required = false) String endpointId) {
+	public @ResponseBody String jsonBtxPswPost(HttpServletRequest request, @RequestBody String body) {
 
 		String key = "/sync/post/json/btx/psw";
 
@@ -151,6 +155,48 @@ public class SyncReadController {
 		return res.getBody();
 	}
 	
+	
+
+	
+	/**
+	 * <p> ЛК: Источник данных BTX: получение данных по статусу пароля через GET-запрос </p>
+	 * @author Иванов И.
+	 * @param отсутствуют
+	 * @version 1.0	 		
+	 * @return JSON 		 		
+	 */	
+	@RequestMapping(value = "/sync/get/json/btx/psw", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonBtxPswGet(
+			@RequestParam(value = "clientCode", required = true) String clientCode,
+			@RequestParam(value = "navDatabase", required = true) String navDatabase,
+			@RequestParam(value = "clientEmail", required = true) String clientEmail){
+
+		String key = "/sync/get/json/btx/psw";
+		ResponseEntity<String> res = null;
+		
+		if (Base64.isBase64(clientCode)) {	
+			byte[] converted = Base64.decodeBase64(clientCode.getBytes());
+			clientCode = new String(converted, StandardCharsets.UTF_8);
+		}
+		if (Base64.isBase64(navDatabase)) {	
+			byte[] converted = Base64.decodeBase64(navDatabase.getBytes());
+			navDatabase = new String(converted, StandardCharsets.UTF_8);
+		}
+		if (Base64.isBase64(clientEmail)) {	
+			byte[] converted = Base64.decodeBase64(clientEmail.getBytes());
+			clientEmail = new String(converted, StandardCharsets.UTF_8);
+		}
+		
+		
+		String params = String.format("?clientCode=%s&navDatabase=%s&clientEmail=%s", clientCode, navDatabase, clientEmail);
+		try {
+			res = appConfig.getBusMsgService().retranslate(key, params);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+		return res.getBody();
+	}
 	
 	
 
@@ -605,6 +651,99 @@ public class SyncReadController {
 		}
 		return res;
 	}
+	
+	
+	/**
+	 * <p> Источник данных NAV: список персональных цен и скидок </p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 * @param custId - NAV-код клиента, пример:К55949, не обязательно
+	 * @param productId - категория продукта, пример: "106628", не обязательно
+	 * @param companyId - база NAV, пример: "СИМПЛ", не обязательно
+	 * @param shipmentMethod - тип отгрузки, пример: "2", не обязательно
+	 * @param contractId - договор, пример: "AGS11-11594", не обязательно
+	 * @param quantity - кол-во, не обязательно
+	 * @param orderDate - дата доставки, пример 20180530, не обязательно
+	 * @param locationId - РЦ1, не обязательно
+	 * @param endpointId - инстанс СУБД: NAV, NAV_COPY, NAV_LK, не обязательно
+	 * @return JSON [{
+	 * 					"Discount":35,
+	 * 					"Price":690,
+	 * 					"ActivityCode":"",
+	 * 					"AllowDisc":1
+	 * 				}]
+	 * 				
+	 */			
+	@RequestMapping(value = "/sync/get/json/nav/personalPricesBase64", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonNavPersonalPrices64lGet(
+			@RequestParam(value = "custId", required = false, defaultValue = "") String custId,
+			@RequestParam(value = "productId", required = false, defaultValue = "") String productId,
+			@RequestParam(value = "shipmentMethod", required = false, defaultValue = "") String shipmentMethod,
+			@RequestParam(value = "managerId", required = false, defaultValue = "") String managerId,
+			@RequestParam(value = "contractId", required = false, defaultValue = "") String contractId,
+			@RequestParam(value = "quantity", required = false, defaultValue = "") String quantity,
+			@RequestParam(value = "orderDate", required = false, defaultValue = "") String orderDate,
+			@RequestParam(value = "dim2", required = false, defaultValue = "") String dim2,
+			@RequestParam(value = "locationId", required = false, defaultValue = "") String locationId,		
+			@RequestParam(value = "companyId", required = false) String companyId,	
+			@RequestParam(value = "endpointId", required = false) String endpointId) {
+
+		
+		StringBuilder sql = new StringBuilder("EXEC [dbo].[web_GetPersonalActionPrice] ");
+
+		if (custId != null) {
+			custId = ObjectConverter.base64Decode(custId);		
+			sql.append("@AccountCode = '" + custId + "',");
+		}
+		
+		if (productId != null) {
+			productId = ObjectConverter.base64Decode(productId);
+			sql.append("@ProductCode = '" + productId + "',");
+		}
+		if (shipmentMethod != null) {
+			shipmentMethod = ObjectConverter.base64Decode(shipmentMethod);
+			sql.append("@ShipmentType = '" + shipmentMethod + "',");
+		}
+		if (managerId != null) {
+			managerId = ObjectConverter.base64Decode(managerId);
+			sql.append("@ManagerCode = '" + managerId + "',");
+		}
+		if (contractId != null) {
+			contractId = ObjectConverter.base64Decode(contractId);
+			sql.append("@ContractCode = '" + contractId + "',");
+		}
+		if (quantity != null) {
+			quantity = ObjectConverter.base64Decode(quantity);
+			sql.append("@Quantity = '" + quantity + "',");
+		}
+		if (orderDate != null) {
+			orderDate = ObjectConverter.base64Decode(orderDate);
+			sql.append("@Orderdate = '" + DateTimeConverter.dateToSQLFormat(orderDate) + "',");
+		}
+		if (dim2 != null) {
+			dim2 = ObjectConverter.base64Decode(dim2);
+			sql.append("@Dim2 = '" + dim2 + "',");
+		}
+		if (locationId != null) {
+			locationId = ObjectConverter.base64Decode(locationId);
+			sql.append("@locationCode = '" + locationId + "',");
+		}
+		if (companyId != null) {
+			companyId = ObjectConverter.base64Decode(companyId);
+			sql.append("@CompanyCode = '" + companyId + "',");
+		}
+		endpointId =   endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId);
+		String res = null;
+		try {
+			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1).toString(), endpointId );
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+		return res;
+	}
+	
+	
 
 	/**
 	 * <p> ЛК: Источник данных BPM: матрица клиентов </p>
@@ -628,6 +767,12 @@ public class SyncReadController {
 		return res;
 	}
 
+	
+	
+	
+
+	
+	
 	
 	/**
 	 * <p> ЛК: Источник данных BPM: рекомендации клиентов </p>
@@ -715,7 +860,39 @@ public class SyncReadController {
 		}
 		return res;
 	}
+	
+		
 
+	
+	/**
+	 * <p> Источник данных NAV: оплаченные накладные </p>
+	 * <p> Обращение: EXEC [dbo].[esb_GetCustomer_XML] @CustNo = '%s', @Date = %s</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 * @param custId - NAV-код сотрудника, пример:К55949, обязательно
+	 * @param date - фомирование на дату, обязательно	
+	 * @param endpointId - инстанс СУБД: NAV, NAV_COPY, NAV_LK, не обязательно				
+	 */	
+	@RequestMapping(value = "/sync/get/json/nav/cust/payment", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonNavPaymentsGet(
+			@RequestParam(value = "custId", required = true) String custId ,
+			@RequestParam(value = "date", required = true) String date,
+			@RequestParam(value = "endpointId", required = false) String endpointId) {
+
+		StringBuilder sql = new StringBuilder(
+				String.format("EXEC [dbo].[esb_GetCustomer_XML] @CustNo = '%s', @Date='%s'", custId, DateTimeConverter.dateToSQLFormat(date)));
+		String res = null;
+		try {
+			res = appConfig.getRemoteService().getFlatXml(sql.toString(), 
+					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+		return res;
+	}
+
+	
 	
 	
 	
