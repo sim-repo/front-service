@@ -9,8 +9,10 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import com.simple.server.config.AppConfig;
-
+import com.simple.server.controller.CustomFilter;
+import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
+import com.simple.server.domain.contract.Login;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.SessionFactory;
 import com.simple.server.domain.contract.TimeoutPolicies;
@@ -24,6 +26,12 @@ public class LoadConfigTask  extends AbstractTask {
 	  
 	@Autowired
 	private AppConfig appConfig;
+	
+	@Autowired
+	private CustomFilter customFilter;
+	
+	
+	
 	
     private List<IContract> list = new ArrayList<>();
 	
@@ -52,9 +60,13 @@ public class LoadConfigTask  extends AbstractTask {
 		List<IContract> res = null;
 		List<IContract> res2 = null;
 		List<IContract> res3 = null;
+		List<IContract> res4 = null;
+		List<IContract> res5 = null;
 		RedirectRouting redirect = null;
 		SessionFactory sf = null;
-		
+		DbUniGetter dbUniGetter = null;
+		Login login = null;
+				
 		setDeactivateMySelfAfterTaskDone(true);
 		
 		Thread.currentThread().sleep(5000);		
@@ -63,6 +75,7 @@ public class LoadConfigTask  extends AbstractTask {
 			
 			System.out.println(">>>> FRONT-SERVICE::::LOADING CONFIG >>>>");
 			
+			System.out.println("Waiting for redirect routings ..");	
 			res = appConfig.getRemoteLogService().getAllMsg(new RedirectRouting());
 			System.out.println("redirect routings size: "+res.size());
 			for(IContract msg: res){
@@ -70,7 +83,7 @@ public class LoadConfigTask  extends AbstractTask {
 				appConfig.setRedirectRoutingHashMap(redirect);				
 			}
 			
-					
+			System.out.println("Waiting for session factories ..");		
 			res2 = appConfig.getRemoteLogService().getAllMsg(new SessionFactory());
 			System.out.println("session factories size: "+res2.size());
 			for(IContract msg: res2){
@@ -79,6 +92,7 @@ public class LoadConfigTask  extends AbstractTask {
 					appConfig.setSessionFactories(sf.getEndpointGroupId(), sf.getEndpointId());			
 			}
 			
+			System.out.println("Waiting for timeout policies..");
 			res3 = appConfig.getRemoteLogService().getAllMsg(new TimeoutPolicies());
 			System.out.println("timeout policies size: "+res3.size());
 			for(IContract msg: res3){			
@@ -90,6 +104,35 @@ public class LoadConfigTask  extends AbstractTask {
 						appConfig.timeoutPolicies.getBackAsyncReadTimeout(),
 						appConfig.timeoutPolicies.getBackAsyncConnectionTimeout(),
 						appConfig.timeoutPolicies.getBackAsyncConnectionRequestTimeout()
+						));
+			}
+			
+			System.out.println("Waiting for db uni getter..");
+			res4 = appConfig.getRemoteLogService().getAllMsg(new DbUniGetter());
+			System.out.println("db uni getter size: "+res4.size());
+			for(IContract msg: res4){
+				dbUniGetter = (DbUniGetter)msg;
+				appConfig.setdbUniGetHashMap(dbUniGetter);	
+				dbUniGetter.setHibernateParamsMap(dbUniGetter.getHibernateParamsMap());
+				dbUniGetter.setAppConfig(appConfig);
+				System.out.println(String.format("detail: %s %s %s %s", 
+						dbUniGetter.getMethod(), 
+						dbUniGetter.getEndpointId(),
+						dbUniGetter.getExecutedFunctionName(),
+						dbUniGetter.getFunctParamByWebParam()
+						));
+			}
+			
+			System.out.println("Waiting for logins ..");
+			res5 = appConfig.getRemoteLogService().getAllMsg(new Login());
+			System.out.println("login size: "+res5.size());
+			for(IContract msg: res5){
+				login = (Login)msg;
+				
+				appConfig.setLoginHashMap(login.getLogin(), login);				
+				customFilter.setAppConfig(appConfig);
+				System.out.println(String.format("detail: %s", 
+						login.getLogin() 						
 						));
 			}
 			

@@ -45,6 +45,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.w3c.dom.Document;
 
 import com.simple.server.config.AppConfig;
 import com.simple.server.config.ContentType;
@@ -308,6 +309,19 @@ public class HttpImpl {
 			if (useAuth) {
 				res = doGetNTLM(redirect.getUrl() + params,
 						getValidContentType(ContentType.fromValue(redirect.getContentType())));
+				
+//				String body = res.getBody();
+//				Document doc = ObjectConverter.convertXmlStringToDocument(body);
+//				doc = ObjectConverter.removeAllAttributes(doc);
+//				String newXml = ObjectConverter.convertDocumentToXmlString(doc);
+//				String xml = ObjectConverter.removeNameSpacesFromXmlString(body);
+//				System.out.println(xml);
+//				
+//				HttpHeaders headers = res.getHeaders();
+//				String convertedBody = HttpImpl.convertBody(redirect.getResponseContentType(), xml);
+			//	res = new ResponseEntity<String>(convertedBody, headers, HttpStatus.OK);
+				
+				
 			} else {
 				URI uri = new URI(redirect.getUrl() + params);
 				RestTemplate restTemplate = new RestTemplate(getSimpleClientHttpRequestFactory());

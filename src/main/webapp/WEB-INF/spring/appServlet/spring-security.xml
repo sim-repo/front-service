@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:beans="http://www.springframework.org/schema/beans"
+  xmlns:sec="http://www.springframework.org/schema/security"
+  xsi:schemaLocation="
+    http://www.springframework.org/schema/security
+    http://www.springframework.org/schema/security/spring-security-4.2.xsd
+    http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.2.xsd">
+ 
+ 	<global-method-security secured-annotations="enabled" />
+ 	
+ 	<http auto-config='false' use-expressions="true"  pattern="/**" entry-point-ref="http403ForbiddenEntryPoint">
+ 		<sec:custom-filter before="SECURITY_CONTEXT_FILTER" ref="defaultBasicAuthFilter" />
+    	<sec:intercept-url pattern="/**" access="ROLE_USER" />
+	</http>
+ 
+	 <beans:bean id="LoginUrlAuthenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+	   <beans:constructor-arg value="/login"/>
+	 </beans:bean>
+	 
+	 <beans:bean id="http403ForbiddenEntryPoint" class="org.springframework.security.web.authentication.Http403ForbiddenEntryPoint" />
+ 
+ 	<authentication-manager alias="authenticationManager">
+	    <authentication-provider>
+	        <user-service>
+	          <user name="test" password="test" authorities="ROLE_AUTHENTICATED" />
+	        </user-service>
+	    </authentication-provider>
+	</authentication-manager>
+
+
+	<beans:bean id="defaultBasicAuthFilter"
+	    class="com.simple.server.security.JWTLoginFilter">
+	    <beans:constructor-arg index="0" value="/*"/>
+        <beans:constructor-arg index="1" ref = "authenticationManager"/>	   
+	</beans:bean>
+	
+
+</beans:beans>

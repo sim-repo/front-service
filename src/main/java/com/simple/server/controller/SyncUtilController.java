@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.simple.server.config.AppConfig;
+import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.TimeoutPolicies;
+import com.simple.server.util.DateTimeConverter;
 import com.simple.server.util.ObjectConverter;
 
 
@@ -58,6 +60,22 @@ public class SyncUtilController {
 		}
 		return res;
 	}
+	
+	
+
+	/**
+	 * <p> Утилита: преобразование любой даты в sql-формат</p>
+	 * @return возвращает String</p>
+	 * @author Иванов И.
+	 * @version 1.0	 	 
+	 */
+	@RequestMapping(value = "/util/cast/sqlDatatime", method = RequestMethod.GET, consumes = MediaType.TEXT_PLAIN_VALUE, produces = "text/plain;charset=Windows-1251")
+	public @ResponseBody String toSqlDatetime(@RequestParam(value = "date", required = false) String date) {
+		return DateTimeConverter.dateToSQLFormat(date);
+	}
+	
+	
+
 	
 	/**
 	 * <p> Утилита: преобразование JSON в XML через POST-запрос</p>
@@ -160,6 +178,57 @@ public class SyncUtilController {
 		for(Map.Entry<String, RedirectRouting> pair: appConfig.getRedirectRoutingsHashMap().entrySet()){
 			RedirectRouting route = pair.getValue();			
 			ret.append(pair.getKey()+"---------------"+route.getUrl()+"\n\n\n");
+		}
+		
+		return ret.toString();		
+	}
+	
+	
+	/**
+	 * <p> Утилита: получить закэшированный список путей переадресаций </p>
+	 * <p> Вызов: http://msk10websvc2:8888/front/util/cache/allRetranslates </p>
+	 * <p> Используйте для проверки адресации, если возникли проблемы с получением данных  </p>
+	 * <p> Внутренняя настроечная таблица: [router redirect] </p>
+	 * @return возвращает JSON</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 */
+	@RequestMapping(value = "util/cache/dbUniGet", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonDbUniGet() {				
+		StringBuilder ret = new StringBuilder();		
+		for(Map.Entry<String, DbUniGetter> pair: appConfig.getAllDbUniGetHashMap().entrySet()){
+			DbUniGetter dbUniGetter1 = pair.getValue();			
+			ret.append(pair.getKey()+"---------------"+dbUniGetter1.getExecutedFunctionName()+" --- "+dbUniGetter1.getFunctParamByWebParam()+" ---\n\n\n");
+		}		
+		return ret.toString();		
+	}
+	
+
+	/**
+	 * <p> Утилита: рефрешинг кэша из [routing db exec]</p>
+	 * @author Иванов И.
+	 * @version 1.0	 	 
+	 */
+	@RequestMapping(value = "util/cache/dbUniGet/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonRefreshDbUniGet() {		
+		StringBuilder ret = new StringBuilder();
+		DbUniGetter dbUniGetter = null;
+		List<IContract> res = null;
+		try {
+			res = appConfig.getRemoteLogService().getAllMsg(new DbUniGetter());
+		} catch (Exception e) {
+			ret.append(e.getMessage()+"\n\n\n");
+		}		
+		for(IContract msg: res){		
+			dbUniGetter = (DbUniGetter)msg;
+			appConfig.setdbUniGetHashMap(dbUniGetter);	
+			dbUniGetter.setHibernateParamsMap(dbUniGetter.getHibernateParamsMap());
+			dbUniGetter.setAppConfig(appConfig);
+		}
+						
+		for(Map.Entry<String, DbUniGetter> pair: appConfig.getAllDbUniGetHashMap().entrySet()){
+			DbUniGetter dbUniGetter1 = pair.getValue();			
+			ret.append(pair.getKey()+"---------------"+dbUniGetter1.getExecutedFunctionName()+" --- "+dbUniGetter1.getFunctParamByWebParam()+" ---\n\n\n");
 		}
 		
 		return ret.toString();		

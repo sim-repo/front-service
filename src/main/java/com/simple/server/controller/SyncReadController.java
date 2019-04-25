@@ -4,6 +4,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,10 +21,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,14 +41,26 @@ import com.simple.server.domain.contract.BusFilterGroup;
 import com.simple.server.domain.contract.BusReportItem;
 import com.simple.server.domain.contract.BusReportMsg;
 import com.simple.server.domain.contract.BusTagTemplate;
+import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
+import com.simple.server.domain.contract.Login;
+import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.StatusMsg;
 import com.simple.server.http.HttpImpl;
+import com.simple.server.security.PasswordUtils;
 import com.simple.server.util.DateTimeConverter;
+import com.simple.server.util.MutableHttpServletRequest;
 import com.simple.server.util.ObjectConverter;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import jdk.nashorn.internal.parser.Token;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ArrayUtils;
+import com.simple.server.util.MutableHttpServletRequest;
 
 
 @Controller
@@ -54,6 +70,15 @@ public class SyncReadController {
 	private AppConfig appConfig;
 	
 	private static final Logger logger = LogManager.getLogger(SyncReadController.class);
+	
+	  static final long EXPIRATIONTIME = 864_000_000; // 10 days
+	    
+	    static final String SECRET = "ThisIsASecret";
+	     
+	    static final String TOKEN_PREFIX = "Bearer";
+	     
+	    static final String HEADER_STRING = "Authorization";
+	    
 
 	/**
 	 * param sql - любая sql-инструкция в LOG для операций чтения
@@ -128,6 +153,65 @@ public class SyncReadController {
 	
 	
 	
+	public static ResponseEntity<String> getBadResponse(){
+		return new ResponseEntity<String>("request does not contain a parameter named 'method' ", HttpStatus.BAD_REQUEST);
+	}
+	
+
+	@RequestMapping(value = "/sync/get/json/db/uni", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonDBUniGet(HttpServletRequest request){
+
+		String method = request.getParameter("method");
+		if (method == null || method == "") {
+			return getBadResponse().getBody();
+		}
+		
+		String res = appConfig.runDbUniStatement(method, request.getQueryString());				
+		return res;
+	}
+	
+	
+	public static boolean isNumeric(String strNum) {
+	    try {
+	        double d = Double.parseDouble(strNum);
+	    } catch (NumberFormatException | NullPointerException nfe) {
+	        return false;
+	    }
+	    return true;
+	}
+
+	@RequestMapping(value = "/sync/get/json/db/b64/uni", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonDBUni64Get(HttpServletRequest request){
+
+		Enumeration enumeration = request.getParameterNames();
+	    Map<String, String> modelMap = new HashMap<>();
+	    while(enumeration.hasMoreElements()){
+	        String parameterName = (String) enumeration.nextElement();
+	        String val = request.getParameter(parameterName);
+	        if (isNumeric(val) == false) {
+		        if (Base64.isBase64(val)) {	
+		        	System.out.println(val);
+					byte[] converted = Base64.decodeBase64(val.getBytes());
+					val = new String(converted, StandardCharsets.UTF_8);
+				} 
+	        }
+	        modelMap.put(parameterName, val);	          
+	    }
+	
+		String method = request.getParameter("method");
+		if (method == null || method == "") {
+			return getBadResponse().getBody();
+		}
+		
+		String res = appConfig.runDbUniStatement(method, modelMap);				
+		return res;
+	}
+
+	
+	
+	
+	
+	
 	/**
 	 * <p> ЛК: Источник данных BTX: изменение пароля через POST-запрос </p>
 	 * @author Иванов И.
@@ -156,7 +240,88 @@ public class SyncReadController {
 	}
 	
 	
+	@RequestMapping(value = "/sync/unauth", method = RequestMethod.GET, consumes = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> badUnauth() {
 
+		String charset = "utf-8";	
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
+		
+		return new ResponseEntity<String>("", responseHeaders, HttpStatus.UNAUTHORIZED);			
+	}
+	
+	@RequestMapping(value = "/sync/expired", method = RequestMethod.GET, consumes = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> expired() {
+
+		String charset = "utf-8";	
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
+		
+		return new ResponseEntity<String>("token has expired", responseHeaders, HttpStatus.UPGRADE_REQUIRED);			
+	}
+	 
+	 
+	
+	@RequestMapping(value = "/signup", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public ResponseEntity<String> signup(@RequestHeader("username") String username, 
+										 @RequestHeader("password") String password) {
+						
+		String charset = "utf-8";	
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
+		
+		if (username.equals("") || password.equals("")) {
+			return new ResponseEntity<String>("user error: use login/psw with header request!", responseHeaders, HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+		}
+				
+		
+		Login login = appConfig.getLogin(username);
+		if (login != null) {
+			return new ResponseEntity<String>("user error: username has already registered", responseHeaders, HttpStatus.CONFLICT);
+		}
+				
+		String token = PasswordUtils.getFirstToken(username, password, appConfig);			
+		
+		if (token == null || token.equals("")) {
+			return new ResponseEntity<String>("error has occured: can't generate new token", responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		return new ResponseEntity<String>(token, responseHeaders, HttpStatus.OK);				
+	}
+	
+	
+	@RequestMapping(value = "/changePsw", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public ResponseEntity<String> forgot(@RequestHeader("username") String username, 
+										 @RequestHeader("oldPassword") String oldPassword,
+										 @RequestHeader("newPassword") String newPassword
+										) {
+						
+		String charset = "utf-8";	
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
+		
+		if (username.equals("") || oldPassword.equals("") || newPassword.equals("")) {
+			return new ResponseEntity<String>("use login/psw with header request!", responseHeaders, HttpStatus.NON_AUTHORITATIVE_INFORMATION);
+		}
+		
+	
+		Login login = appConfig.getLogin(username);
+		
+		if (login == null) {
+			return new ResponseEntity<String>("wrong login", responseHeaders, HttpStatus.UNAUTHORIZED);
+		}	
+		
+		String token = PasswordUtils.tryChangePsw(login, oldPassword, newPassword, appConfig);			
+		
+		if (token == null || token.equals("")) {
+			return new ResponseEntity<String>("wrong login or old password", responseHeaders, HttpStatus.UNAUTHORIZED);
+		}
+		
+		return new ResponseEntity<String>(token, responseHeaders, HttpStatus.OK);				
+	}
+
+	
+	
 	
 	/**
 	 * <p> ЛК: Источник данных BTX: получение данных по статусу пароля через GET-запрос </p>
@@ -169,7 +334,8 @@ public class SyncReadController {
 	public @ResponseBody String jsonBtxPswGet(
 			@RequestParam(value = "clientCode", required = true) String clientCode,
 			@RequestParam(value = "navDatabase", required = true) String navDatabase,
-			@RequestParam(value = "clientEmail", required = true) String clientEmail){
+			@RequestParam(value = "clientEmail", required = true) String clientEmail,
+			@RequestParam(value = "token", required = false) String token){
 
 		String key = "/sync/get/json/btx/psw";
 		ResponseEntity<String> res = null;
@@ -188,7 +354,8 @@ public class SyncReadController {
 		}
 		
 		
-		String params = String.format("?clientCode=%s&navDatabase=%s&clientEmail=%s", clientCode, navDatabase, clientEmail);
+		
+		String params = String.format("?clientCode=%s&navDatabase=%s&clientEmail=%s&token=%s", clientCode, navDatabase, clientEmail,token);
 		try {
 			res = appConfig.getBusMsgService().retranslate(key, params);
 		} catch (Exception e) {
@@ -487,19 +654,30 @@ public class SyncReadController {
 	 * 				  "StartDate": "2018-05-30T10:00:00",
 	 * 				  "EndDate": "2018-05-30T19:00:00"}
 	 */		
-	@RequestMapping(value = "/sync/get/json/1c/EmployeesSchedule", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> jsonOneEmployeesScheduleGet(HttpServletRequest request) {
-		String key = "/sync/get/json/1c/EmployeesSchedule";
-		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, "");
+	@RequestMapping(value = "/sync/get/json/1c/Payroll", method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> jsonOnePayrollGet(
+			@RequestParam(value = "periodBegin", required = false) String periodBegin,
+			@RequestParam(value = "periodEnd", required = false) String periodEnd,
+			@RequestParam(value = "id", required = false) String id	) {
+		String key = "/sync/get/json/1c/Payroll";
+		
+		String params = ""; 
+				
+		if (periodBegin != null && periodEnd != null) {	
+			params = String.format("?periodBegin=%s&periodEnd=%s", periodBegin, periodEnd);
+		}
+		if (id != null) {	
+			params = String.format("?id=%s", id);
+		}
+
+		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);
 		return res;
 	}
-	
-	
 
 	
 	
 	/**
-	 * <p> * Источник данных BPM: возвращает баннеры по клиенту </p>
+	 * <p> * Источник данных 1C: возвращает служебный график </p>
 	 * @author Иванов И.
 	 * @version 1.0	 
 	 * @param параметров нет
@@ -508,13 +686,16 @@ public class SyncReadController {
 	 * 				  "StartDate": "2018-05-30T10:00:00",
 	 * 				  "EndDate": "2018-05-30T19:00:00"}
 	 */		
-	@RequestMapping(value = "/sync/get/json/bpm/getClientBanners", method = RequestMethod.GET)
-	public @ResponseBody ResponseEntity<String> jsonBpmClientBannersGet(@RequestParam(value = "navClientId", required = true) String navClientId) {
-		String key = "/sync/get/json/bpm/GetClientBanners";
-		String params = String.format("?navClientId=%s", navClientId);
-		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);
+	@RequestMapping(value = "/sync/get/json/1c/EmployeesSchedule", method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> jsonOneEmployeesScheduleGet(HttpServletRequest request) {
+		String key = "/sync/get/json/1c/EmployeesSchedule";
+		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, "");
 		return res;
 	}
+	
+
+	
+	
 	
 	
 	
@@ -754,14 +935,20 @@ public class SyncReadController {
 	 */			
 	@RequestMapping(value = "/sync/get/json/clientMatrix", method = RequestMethod.GET)
 	public @ResponseBody ResponseEntity<String> jsonBpmDeliveryIntervalGet(
-			@RequestParam(value = "navClientId", required = true) String navClientId) {
+			@RequestParam(value = "navClientId", required = true) String navClientId,
+			@RequestParam(value = "navisionDatabase", required = false, defaultValue = "") String navisionDatabase
+			) {
 
 		String key = "/sync/get/json/bpm/clientMatrixes";
 		if (Base64.isBase64(navClientId)) {	
 			byte[] converted = Base64.decodeBase64(navClientId.getBytes());
 			navClientId = new String(converted, StandardCharsets.UTF_8);
 		}
-		String params = String.format("?navClientId=%s", navClientId);
+		if (Base64.isBase64(navisionDatabase)) {	
+			byte[] converted = Base64.decodeBase64(navisionDatabase.getBytes());
+			navisionDatabase = new String(converted, StandardCharsets.UTF_8);
+		}
+		String params = String.format("?navClientId=%s&navisionDatabase=%s", navClientId, navisionDatabase);
 		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);
 		logInput(key+params, res);
 		return res;
@@ -789,7 +976,9 @@ public class SyncReadController {
 	 */	
 	@RequestMapping(value = "/sync/get/json/clientRecommendations", method = RequestMethod.GET)
 	public @ResponseBody ResponseEntity<String> jsonBpmClientRecommendationGet(
-			@RequestParam(value = "navClientId", required = true) String navClientId) {
+			@RequestParam(value = "navClientId", required = true) String navClientId,
+			@RequestParam(value = "navisionDatabase", required = false, defaultValue = "") String navisionDatabase
+			) {
 
 		String key = "/sync/get/json/bpm/clientRecommendations";
 		
@@ -797,12 +986,46 @@ public class SyncReadController {
 			byte[] converted = Base64.decodeBase64(navClientId.getBytes());
 			navClientId = new String(converted, StandardCharsets.UTF_8);
 		}
-		String params = String.format("?navClientId=%s", navClientId);
+		if (Base64.isBase64(navisionDatabase)) {	
+			byte[] converted = Base64.decodeBase64(navisionDatabase.getBytes());
+			navisionDatabase = new String(converted, StandardCharsets.UTF_8);
+		}
+		
+		String params = String.format("?navClientId=%s&navisionDatabase=%s", navClientId, navisionDatabase);
 		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);		
 		logInput(key+params, res);
 		return res;
 	}
 
+	/**
+	 * <p> * Источник данных BPM: возвращает баннеры по клиенту </p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 * @param параметров нет
+	 * @return JSON [{"EmployeeID": "7c4aded4-bfd2-11e3-8064-00265554afe6",
+	 * 				  "TypeOfWork": "Пятидневка",
+	 * 				  "StartDate": "2018-05-30T10:00:00",
+	 * 				  "EndDate": "2018-05-30T19:00:00"}
+	 */		
+	@RequestMapping(value = "/sync/get/json/bpm/getClientBanners", method = RequestMethod.GET)
+	public @ResponseBody ResponseEntity<String> jsonBpmClientBannersGet(@RequestParam(value = "navClientId", required = true) String navClientId,
+			@RequestParam(value = "navisionDatabase", required = false, defaultValue = "") String navisionDatabase
+			) {
+		
+		if (Base64.isBase64(navClientId)) {	
+			byte[] converted = Base64.decodeBase64(navClientId.getBytes());
+			navClientId = new String(converted, StandardCharsets.UTF_8);
+		}
+		if (Base64.isBase64(navisionDatabase)) {	
+			byte[] converted = Base64.decodeBase64(navisionDatabase.getBytes());
+			navisionDatabase = new String(converted, StandardCharsets.UTF_8);
+		}
+		
+		String key = "/sync/get/json/bpm/GetClientBanners";
+		String params = String.format("?navClientId=%s&navisionDatabase=%s", navClientId, navisionDatabase);
+		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);
+		return res;
+	}
 	
 	
 	
@@ -876,11 +1099,21 @@ public class SyncReadController {
 	@RequestMapping(value = "/sync/get/json/nav/cust/payment", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
 	public @ResponseBody String jsonNavPaymentsGet(
 			@RequestParam(value = "custId", required = true) String custId ,
+			@RequestParam(value = "companyName", required = false) String companyName ,
 			@RequestParam(value = "date", required = true) String date,
 			@RequestParam(value = "endpointId", required = false) String endpointId) {
-
+		
+		if (Base64.isBase64(custId)) {	
+			byte[] converted = Base64.decodeBase64(custId.getBytes());
+			custId = new String(converted, StandardCharsets.UTF_8);
+		}
+		if (Base64.isBase64(companyName)) {	
+			byte[] converted = Base64.decodeBase64(companyName.getBytes());
+			companyName = new String(converted, StandardCharsets.UTF_8);
+		}
+		
 		StringBuilder sql = new StringBuilder(
-				String.format("EXEC [dbo].[esb_GetCustomer_XML] @CustNo = '%s', @Date='%s'", custId, DateTimeConverter.dateToSQLFormat(date)));
+				String.format("EXEC [dbo].[esb_GetCustomer_XML] @CustNo = '%s', @CompanyName = '%s', @Date='%s'", custId, companyName, DateTimeConverter.dateToSQLFormat(date)));
 		String res = null;
 		try {
 			res = appConfig.getRemoteService().getFlatXml(sql.toString(), 
@@ -1067,7 +1300,29 @@ public class SyncReadController {
 		return res;
 	}
 
+	
+	
+	/**
+	 * <p> Источник данных NAV: товарный каталог (xml-ver.) </p>
+	 * <p> Обращение: EXEC  [dbo].[web_xml_getItemCatalog] </p>
+	 * @author Иванов И.
+	 * @version 1.0	 	
+	 * @param endpointId - инстанс СУБД: NAV, NAV_COPY, NAV_LK, не обязательно				
+	 */	
+	@RequestMapping(value = "/sync/get/json/nav//item/catalog2", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String jsonNavItemCatalog2Get(			
+			@RequestParam(value = "endpointId", required = false) String endpointId) {
 
+		String res = null;
+		try {
+			res = appConfig.getRemoteService().getFlatXml("EXEC [dbo].[web_xml_getItemCatalog]", 
+					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return e.getMessage();
+		}
+		return res;
+	}
 
 
 

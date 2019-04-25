@@ -1,6 +1,8 @@
 package com.simple.server.config;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -12,7 +14,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
+import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
+import com.simple.server.domain.contract.Login;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.SessionFactory;
 import com.simple.server.domain.contract.StatusMsg;
@@ -26,7 +30,6 @@ import com.simple.server.service.ReaderServiceImpl;
 import com.simple.server.service.remote.IRemoteLogService;
 import com.simple.server.service.remote.IRemoteService;
 import com.simple.server.statistics.PerfomancerStat;
-
 
 @Service("appConfig")
 @Scope("singleton")
@@ -77,7 +80,8 @@ public class AppConfig {
 	
 	ConcurrentHashMap<String,RedirectRouting> redirectRoutingsHashMap = new ConcurrentHashMap<String, RedirectRouting>();		
 	ConcurrentHashMap<String, String> sessionFactories = new ConcurrentHashMap<String, String>();
-	
+	ConcurrentHashMap<String, DbUniGetter> dbUniGetHashMap= new ConcurrentHashMap<String, DbUniGetter>();	
+	ConcurrentHashMap<String, Login> loginHashMap= new ConcurrentHashMap<String, Login>();		
 	
 	private LinkedBlockingQueue<IContract> queueDirtyPlainText = new LinkedBlockingQueue<>(100);
     private LinkedBlockingQueue<IContract> queueDirtyMsg = new LinkedBlockingQueue<>(100);
@@ -119,8 +123,44 @@ public class AppConfig {
 		this.redirectRoutingsHashMap.put(routing.getMethodName(), routing);		
 	}
 	
+	public void setLoginHashMap(String key, Login login){
+		this.loginHashMap.put(key, login);		
+	}
 	
+	public Login getLogin(String username){
+		return this.loginHashMap.get(username);
+	}
 	
+	public List<String> getLogins(){	
+		List<String> res = new ArrayList<String>(); 
+		for (Map.Entry<String, Login> entry : loginHashMap.entrySet()) {
+		    System.out.println(entry.getKey() + "/" + entry.getValue());
+		    res.add(entry.getKey());
+		}
+		return res;
+	}
+	
+	public void setdbUniGetHashMap(DbUniGetter dbUniGetter){
+		this.dbUniGetHashMap.put(dbUniGetter.getMethod(), dbUniGetter);		
+	}
+	
+	public DbUniGetter getdbUniGetHashMap(String method){
+		return this.dbUniGetHashMap.get(method);
+	}
+
+	public ConcurrentHashMap<String, DbUniGetter> getAllDbUniGetHashMap(){
+		return this.dbUniGetHashMap;
+	}
+	
+	public String runDbUniStatement(String method,  Map<String, String> params) {
+		DbUniGetter dbUniGetter = getdbUniGetHashMap(method);
+		return DbUniGetter.runDbStatement(dbUniGetter, method, params);		
+	}
+	
+	public String runDbUniStatement(String method,  String params) {
+		DbUniGetter dbUniGetter = getdbUniGetHashMap(method);
+		return DbUniGetter.runDbStatement(dbUniGetter, method, params);		
+	}
 
 	public ApplicationContext getApplicationContext() {
 		return ctx;
