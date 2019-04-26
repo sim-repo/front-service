@@ -1,5 +1,7 @@
 package com.simple.server.domain.contract;
 
+import java.util.Date;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -16,19 +18,18 @@ public class Login extends ALogContract {
 	protected Integer id;
 	
 	String login;
-	String expire;
+	Date expire;
 	String psw;	
 	String salt;
 	
-	public Login() {
-		
-	}
+	public Login() {}
 	
-	public Login(String login, String psw, String salt) {
+	public Login(String login, String psw, String salt, Date expire) {
 		super();	
 		this.login = login;
 		this.psw = psw;
 		this.salt = salt;
+		this.expire = expire;
 	}
 
 	@Override
@@ -54,10 +55,10 @@ public class Login extends ALogContract {
 	public void setPsw(String psw) {
 		this.psw = psw;
 	}
-	public String getExpire() {
+	public Date getExpire() {
 		return expire;
 	}
-	public void setExpire(String expire) {
+	public void setExpire(Date expire) {
 		this.expire = expire;
 	}
 

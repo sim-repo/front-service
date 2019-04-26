@@ -3,28 +3,24 @@ package com.simple.server.domain.contract;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.simple.server.config.AppConfig;
 import com.simple.server.config.HandlerResultType;
 
 
-
-@JsonAutoDetect
-@JsonDeserialize(as = DbUniGetter.class)
-public class DbUniGetter extends ALogContract {
-
-
-	private AppConfig appConfig;
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(as = DbSecureUniGetter.class)
+public class DbSecureUniGetter extends AContract{
+	
+private AppConfig appConfig;
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -47,7 +43,7 @@ public class DbUniGetter extends ALogContract {
 	
 	@Override
 	public String getClazz() {
-		return DbUniGetter.class.getName();
+		return DbSecureUniGetter.class.getName();
 	}
 
 	public Integer getId() {
@@ -196,7 +192,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 	
-	public static String runDbStatement(DbUniGetter getter, String method, String params) {
+	public static String runDbStatement(DbSecureUniGetter getter, String method, String params) {
 		Map<String, String> queryParameters = getQueryParameters(params);
 
 		List<String> funcParamKeys = new ArrayList<String>();
@@ -217,14 +213,15 @@ public class DbUniGetter extends ALogContract {
 				sqlStatement.append(funcParamKeys.get(i)+"="+funcParamValues.get(i)+","); 
 	        }
 			sqlStatement.deleteCharAt(sqlStatement.length()-1);
-		}				
+		}		
+		sqlStatement.append(", @_secured = 1");
 		System.out.println(sqlStatement.toString());		
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
 	
 
 	
-	public static String runDbStatement(DbUniGetter getter, String method, Map<String, String> params) {
+	public static String runDbStatement(DbSecureUniGetter getter, String method, Map<String, String> params) {
 
 		List<String> funcParamKeys = new ArrayList<String>();
 		List<String> funcParamValues = new ArrayList<String>();
@@ -243,8 +240,8 @@ public class DbUniGetter extends ALogContract {
 			for(int i=0; i < funcParamKeys.size(); i++){			
 				sqlStatement.append(funcParamKeys.get(i)+"="+funcParamValues.get(i)+","); 
 	        }
-			sqlStatement.deleteCharAt(sqlStatement.length()-1);
-		}				
+		}
+		sqlStatement.append(", @_secured = 1");
 		System.out.println(sqlStatement.toString());		
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
@@ -252,7 +249,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 
-	private static String execStatement(DbUniGetter getter, String sql, String endpointId) {
+	private static String execStatement(DbSecureUniGetter getter, String sql, String endpointId) {
 		 switch (getter.getResultHandlerType()) {
 	         case flatXML:  
 	        	 return runFlatXML(getter, sql, endpointId);	
@@ -274,7 +271,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 	
-	private static String runFlatJSON(DbUniGetter getter, String sql, String endpointId) {
+	private static String runFlatJSON(DbSecureUniGetter getter, String sql, String endpointId) {
 		String res = null;
 		System.out.println(endpointId+ " : "+sql);
 		try {
@@ -290,7 +287,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 	
-	private static String runFlatXML(DbUniGetter getter, String sql, String endpointId) {
+	private static String runFlatXML(DbSecureUniGetter getter, String sql, String endpointId) {
 		String res = null;
 		try {
 			res = getter.appConfig.getRemoteService().getFlatXml(sql,
@@ -304,7 +301,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 	
-	private static String runComplexJSON(DbUniGetter getter, String sql, String endpointId) {
+	private static String runComplexJSON(DbSecureUniGetter getter, String sql, String endpointId) {
 		String res = null;
 		try {
 			res = getter.appConfig.getRemoteService().getComplexJson(sql,
@@ -318,7 +315,7 @@ public class DbUniGetter extends ALogContract {
 	
 	
 	
-	private static String runFirstFlatJson(DbUniGetter getter, String sql, String endpointId) {
+	private static String runFirstFlatJson(DbSecureUniGetter getter, String sql, String endpointId) {
 		String res = null;
 		try {
 			res = getter.appConfig.getRemoteService().getFlatJsonFirstObj(sql,
@@ -356,4 +353,5 @@ public class DbUniGetter extends ALogContract {
 	    }
 	    return queryParameters;
 	}
+	
 }

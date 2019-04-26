@@ -14,7 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
 
 import com.simple.server.config.AppConfig;
+import com.simple.server.config.JwtStatusType;
 import com.simple.server.domain.contract.Login;
+import com.simple.server.util.DateTimeConverter;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -43,6 +45,7 @@ public class PasswordUtils {
         }
         return new String(returnValue);
     }
+     
     public static byte[] hash(char[] password, byte[] salt) {
         PBEKeySpec spec = new PBEKeySpec(password, salt, ITERATIONS, KEY_LENGTH);
         Arrays.fill(password, Character.MIN_VALUE);
@@ -55,6 +58,7 @@ public class PasswordUtils {
             spec.clearPassword();
         }
     }
+    
     public static String generateSecurePassword(String password, String salt) {
         String returnValue = null;
         byte[] securePassword = hash(password.toCharArray(), salt.getBytes());
@@ -67,51 +71,54 @@ public class PasswordUtils {
     public static boolean verifyUserPassword(String providedPassword, String securedPassword, String salt) {
         boolean returnValue = false;
         
-        // Generate New secure password with the same salt
         String newSecurePassword = generateSecurePassword(providedPassword, salt);
         
-        // Check if two passwords are equal
         returnValue = newSecurePassword.equalsIgnoreCase(securedPassword);
         
         return returnValue;
     }
     
-    public static Boolean isExpired(HttpServletRequest request, AppConfig appConfig) {
-    	 String token = request.getHeader(HEADER_STRING);
-    	 Date expirationDate = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getExpiration();  
-    	 System.out.println(expirationDate);    	 
-         if (expirationDate.before(new Date())) {
-         	return true;
-         }
-         return false;
+    private static JwtStatusType isExpired(HttpServletRequest request, Date untilDate) {
+    	if (untilDate == null) {
+    		return JwtStatusType.RevokeToken;
+    	}
+		String token = request.getHeader(HEADER_STRING);
+		Date expirationDate = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getExpiration();  
+		System.out.println(expirationDate);
+		System.out.println(untilDate);  
+			
+		if (expirationDate.compareTo(untilDate) > 0) {	    	
+	     	return JwtStatusType.Expired;
+	    }
+	    return JwtStatusType.Authorized;
     }
     
-    public static Boolean isAuthentication(HttpServletRequest request, AppConfig appConfig) {
+    public static JwtStatusType isAuthentication(HttpServletRequest request, AppConfig appConfig) {
         String token = request.getHeader(HEADER_STRING);
         if (token != null) {
             String username = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getSubject();     
            
             Login login = appConfig.getLogin(username); 
             if (login != null) {
-            	return true;
+            	return isExpired(request, login.getExpire());            	
             }
-            return false;
+            return JwtStatusType.UnAuhorized;
         }
-        return false;
+        return JwtStatusType.UnAuhorized;
     }   
     
     
     public static String getFirstToken(String username, String psw, AppConfig appConfig) {
     	String salt = PasswordUtils.getSalt(30);
         String encryptedPsw = PasswordUtils.generateSecurePassword(psw, salt);
-        
-    	Login login = new Login(username, encryptedPsw, salt);
+        Date expire = new DateTime(new Date()).plusDays(EXPIRATIONDAY).toDate();
+    	Login login = new Login(username, encryptedPsw, salt, expire);
     	
     	try {
 			appConfig.getRemoteLogService().putLogin(login);
 			appConfig.setLoginHashMap(login.getLogin(), login);
 			return  Jwts.builder().setSubject(username)
-	                .setExpiration(new DateTime(new Date()).plusDays(EXPIRATIONDAY).toDate())
+	                .setExpiration(expire)
 	                .signWith(SignatureAlgorithm.HS512, SECRET).compact();	
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -131,13 +138,15 @@ public class PasswordUtils {
     private static String doChangePsw(Login login, String newPassword, AppConfig appConfig) {
 		 String salt = PasswordUtils.getSalt(30);
          String encryptedPassword = PasswordUtils.generateSecurePassword(newPassword, salt);
+         Date expire = new DateTime(new Date()).plusDays(EXPIRATIONDAY).toDate();
          login.setSalt(salt);
          login.setPsw(encryptedPassword); 
+         login.setExpire(expire);
          
          try {
  			appConfig.getRemoteLogService().putLogin(login);
  			return  Jwts.builder().setSubject(login.getLogin())
- 	                .setExpiration(new DateTime(new Date()).plusDays(EXPIRATIONDAY).toDate())
+ 	                .setExpiration(expire)
  	                .signWith(SignatureAlgorithm.HS512, SECRET).compact();		
  		} catch (Exception e) {
  			// TODO Auto-generated catch block

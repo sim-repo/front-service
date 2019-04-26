@@ -1,5 +1,7 @@
 package com.simple.server.util;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -18,6 +20,7 @@ public class DateTimeConverter {
 		
 	public final static String NAV_DEFAULT_DATE = "1753-01-01 00:00:00";
 	public final static String NAV_DEFAULT_TIME = "000000";
+	final static String VALIDATE_DATE_FORMAT = "dd-MM-yyyy";
 		
 	private static final DateTimeFormatter DATE_FORMATTER =  
 		    new DateTimeFormatterBuilder()
@@ -79,6 +82,19 @@ public class DateTimeConverter {
 	
 	public static DateTime createCurrentDateTime(){
 		return new DateTime();
+	}
+	
+	
+
+	public static boolean isDateValid(String date) {
+	        try {
+	            DateFormat df = new SimpleDateFormat(VALIDATE_DATE_FORMAT);
+	            df.setLenient(false);
+	            df.parse(date);
+	            return true;
+	        } catch (ParseException e) {
+	            return false;
+	        }
 	}
 	
 }

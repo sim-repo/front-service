@@ -79,7 +79,7 @@
 	</filter>
 	<filter-mapping>
 	    <filter-name>customFilter</filter-name>
-	    <url-pattern>/util/cache/retranslates</url-pattern>
+	    <url-pattern>/sync/get/json/secure/*</url-pattern>
 	</filter-mapping>
 	
 

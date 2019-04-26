@@ -69,9 +69,9 @@ public class SyncReadController {
 	@Autowired
 	private AppConfig appConfig;
 	
-	private static final Logger logger = LogManager.getLogger(SyncReadController.class);
+		private static final Logger logger = LogManager.getLogger(SyncReadController.class);
 	
-	  static final long EXPIRATIONTIME = 864_000_000; // 10 days
+		static final long EXPIRATIONTIME = 864_000_000; // 10 days
 	    
 	    static final String SECRET = "ThisIsASecret";
 	     
@@ -80,61 +80,7 @@ public class SyncReadController {
 	    static final String HEADER_STRING = "Authorization";
 	    
 
-	/**
-	 * param sql - любая sql-инструкция в LOG для операций чтения
-	 * 
-	 * @return json
-	 */
-	/* uncomment if necessary
-	 *  
-	@RequestMapping(value = "/sync/get/json/log/any/{sql:.+}", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonLogAnyGet(@PathVariable("sql") String sql) {
-		String res = null;
-		try {
-			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return res;
-	}*/
 	
-
-	/*
-	@RequestMapping(value = "/sync/get/json/nav/any/{sql:.+}", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	private @ResponseBody String jsonNavAnyGet(@PathVariable("sql") String sql,
-			@RequestParam(value = "endpointId", required = false) String endpointId) {
-		String res = null;
-		try {
-			res = appConfig.getRemoteService().getFlatJson(sql,
-					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return res;
-	}
-	*/
-	
-	/**
-	 * @param sql
-	 *            - любая sql-инструкция в NAV для операций чтения
-	 * @return json
-	 */
-	/*
-	@RequestMapping(value = "/sync/get/xml/nav/any/{sql:.+}", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	private @ResponseBody String xmlNavAnyGet(@PathVariable("sql") String sql,
-			@RequestParam(value = "endpointId", required = false) String endpointId) {
-		String res = null;
-		try {
-			res = appConfig.getRemoteService().getFlatXml(sql,
-					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
-		} catch (Exception e) {
-			e.printStackTrace();
-			return e.getMessage();
-		}
-		return res;
-	}
-	
-	*/
 	
 	private void logInput(String url, ResponseEntity<String> res) {
 		String bodySubstring = "null";
@@ -152,65 +98,7 @@ public class SyncReadController {
 	}
 	
 	
-	
-	public static ResponseEntity<String> getBadResponse(){
-		return new ResponseEntity<String>("request does not contain a parameter named 'method' ", HttpStatus.BAD_REQUEST);
-	}
-	
 
-	@RequestMapping(value = "/sync/get/json/db/uni", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonDBUniGet(HttpServletRequest request){
-
-		String method = request.getParameter("method");
-		if (method == null || method == "") {
-			return getBadResponse().getBody();
-		}
-		
-		String res = appConfig.runDbUniStatement(method, request.getQueryString());				
-		return res;
-	}
-	
-	
-	public static boolean isNumeric(String strNum) {
-	    try {
-	        double d = Double.parseDouble(strNum);
-	    } catch (NumberFormatException | NullPointerException nfe) {
-	        return false;
-	    }
-	    return true;
-	}
-
-	@RequestMapping(value = "/sync/get/json/db/b64/uni", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonDBUni64Get(HttpServletRequest request){
-
-		Enumeration enumeration = request.getParameterNames();
-	    Map<String, String> modelMap = new HashMap<>();
-	    while(enumeration.hasMoreElements()){
-	        String parameterName = (String) enumeration.nextElement();
-	        String val = request.getParameter(parameterName);
-	        if (isNumeric(val) == false) {
-		        if (Base64.isBase64(val)) {	
-		        	System.out.println(val);
-					byte[] converted = Base64.decodeBase64(val.getBytes());
-					val = new String(converted, StandardCharsets.UTF_8);
-				} 
-	        }
-	        modelMap.put(parameterName, val);	          
-	    }
-	
-		String method = request.getParameter("method");
-		if (method == null || method == "") {
-			return getBadResponse().getBody();
-		}
-		
-		String res = appConfig.runDbUniStatement(method, modelMap);				
-		return res;
-	}
-
-	
-	
-	
-	
 	
 	/**
 	 * <p> ЛК: Источник данных BTX: изменение пароля через POST-запрос </p>
@@ -239,90 +127,7 @@ public class SyncReadController {
 		return res.getBody();
 	}
 	
-	
-	@RequestMapping(value = "/sync/unauth", method = RequestMethod.GET, consumes = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> badUnauth() {
 
-		String charset = "utf-8";	
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
-		
-		return new ResponseEntity<String>("", responseHeaders, HttpStatus.UNAUTHORIZED);			
-	}
-	
-	@RequestMapping(value = "/sync/expired", method = RequestMethod.GET, consumes = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> expired() {
-
-		String charset = "utf-8";	
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
-		
-		return new ResponseEntity<String>("token has expired", responseHeaders, HttpStatus.UPGRADE_REQUIRED);			
-	}
-	 
-	 
-	
-	@RequestMapping(value = "/signup", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public ResponseEntity<String> signup(@RequestHeader("username") String username, 
-										 @RequestHeader("password") String password) {
-						
-		String charset = "utf-8";	
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
-		
-		if (username.equals("") || password.equals("")) {
-			return new ResponseEntity<String>("user error: use login/psw with header request!", responseHeaders, HttpStatus.NON_AUTHORITATIVE_INFORMATION);
-		}
-				
-		
-		Login login = appConfig.getLogin(username);
-		if (login != null) {
-			return new ResponseEntity<String>("user error: username has already registered", responseHeaders, HttpStatus.CONFLICT);
-		}
-				
-		String token = PasswordUtils.getFirstToken(username, password, appConfig);			
-		
-		if (token == null || token.equals("")) {
-			return new ResponseEntity<String>("error has occured: can't generate new token", responseHeaders, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		
-		return new ResponseEntity<String>(token, responseHeaders, HttpStatus.OK);				
-	}
-	
-	
-	@RequestMapping(value = "/changePsw", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public ResponseEntity<String> forgot(@RequestHeader("username") String username, 
-										 @RequestHeader("oldPassword") String oldPassword,
-										 @RequestHeader("newPassword") String newPassword
-										) {
-						
-		String charset = "utf-8";	
-		HttpHeaders responseHeaders = new HttpHeaders();
-		responseHeaders.add("Content-Type", "text/plain;charset=" + charset);
-		
-		if (username.equals("") || oldPassword.equals("") || newPassword.equals("")) {
-			return new ResponseEntity<String>("use login/psw with header request!", responseHeaders, HttpStatus.NON_AUTHORITATIVE_INFORMATION);
-		}
-		
-	
-		Login login = appConfig.getLogin(username);
-		
-		if (login == null) {
-			return new ResponseEntity<String>("wrong login", responseHeaders, HttpStatus.UNAUTHORIZED);
-		}	
-		
-		String token = PasswordUtils.tryChangePsw(login, oldPassword, newPassword, appConfig);			
-		
-		if (token == null || token.equals("")) {
-			return new ResponseEntity<String>("wrong login or old password", responseHeaders, HttpStatus.UNAUTHORIZED);
-		}
-		
-		return new ResponseEntity<String>(token, responseHeaders, HttpStatus.OK);				
-	}
-
-	
-	
-	
 	/**
 	 * <p> ЛК: Источник данных BTX: получение данных по статусу пароля через GET-запрос </p>
 	 * @author Иванов И.

@@ -1,5 +1,6 @@
 package com.simple.server.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,8 +20,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.simple.server.config.AppConfig;
+import com.simple.server.domain.contract.DbSecureUniGetter;
 import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
+import com.simple.server.domain.contract.Login;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.TimeoutPolicies;
 import com.simple.server.util.DateTimeConverter;
@@ -33,6 +36,8 @@ public class SyncUtilController {
 	@Autowired
 	private AppConfig appConfig;
 	
+	@Autowired
+	private CustomFilter customFilter;
 	
 	/**
 	 * <p> Утилита: узнать о наличии серверных ошибок, связанных с отправками сообщений </p>
@@ -46,7 +51,7 @@ public class SyncUtilController {
 	 * @version 1.0	 	 
 	 */
 	@RequestMapping(value = "/sync/get/json/log/server_err", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonLogGetServer_err(@RequestParam(value = "eventId", required = false) String eventId) {
+	public @ResponseBody String utilLogServerErr(@RequestParam(value = "eventId", required = false) String eventId) {
 
 		String res = null;
 		String where =  (eventId != null) ? " AND `event_id` LIKE '"+eventId +"'" : "";
@@ -145,7 +150,7 @@ public class SyncUtilController {
 	 * @version 1.0	 
 	 */
 	@RequestMapping(value = "util/cache/retranslates", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRetranslateGet() {				
+	public @ResponseBody String utilRetranslate() {				
 		StringBuilder ret = new StringBuilder();		
 		for(Map.Entry<String, RedirectRouting> pair: appConfig.getRedirectRoutingsHashMap().entrySet()){
 			RedirectRouting route = pair.getValue();			
@@ -161,7 +166,7 @@ public class SyncUtilController {
 	 * @version 1.0	 	 
 	 */
 	@RequestMapping(value = "util/cache/retranslates/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRefreshRetranslateGet() {		
+	public @ResponseBody String utilRefreshRetranslates() {		
 		StringBuilder ret = new StringBuilder();
 		RedirectRouting redirect = null;
 		List<IContract> res = null;
@@ -185,16 +190,14 @@ public class SyncUtilController {
 	
 	
 	/**
-	 * <p> Утилита: получить закэшированный список путей переадресаций </p>
-	 * <p> Вызов: http://msk10websvc2:8888/front/util/cache/allRetranslates </p>
-	 * <p> Используйте для проверки адресации, если возникли проблемы с получением данных  </p>
-	 * <p> Внутренняя настроечная таблица: [router redirect] </p>
+	 * <p> Утилита: получить список закэшированных функций для вызовов через GET-запросы </p>
+	 * <p> Внутренняя настроечная таблица: [routing db exec] </p>
 	 * @return возвращает JSON</p>
 	 * @author Иванов И.
 	 * @version 1.0	 
 	 */
 	@RequestMapping(value = "util/cache/dbUniGet", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonDbUniGet() {				
+	public @ResponseBody String utilUniGet() {				
 		StringBuilder ret = new StringBuilder();		
 		for(Map.Entry<String, DbUniGetter> pair: appConfig.getAllDbUniGetHashMap().entrySet()){
 			DbUniGetter dbUniGetter1 = pair.getValue();			
@@ -210,7 +213,7 @@ public class SyncUtilController {
 	 * @version 1.0	 	 
 	 */
 	@RequestMapping(value = "util/cache/dbUniGet/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRefreshDbUniGet() {		
+	public @ResponseBody String utilRefreshUniGet() {		
 		StringBuilder ret = new StringBuilder();
 		DbUniGetter dbUniGetter = null;
 		List<IContract> res = null;
@@ -234,7 +237,93 @@ public class SyncUtilController {
 		return ret.toString();		
 	}
 	
+	/**
+	 * <p> Утилита: получить список закэшированных функций для вызовов через GET-запросы </p>
+	 * <p> Внутренняя настроечная таблица: [routing db exec] </p>
+	 * @return возвращает JSON</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 */
+	@RequestMapping(value = "util/cache/secureUniGet", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String utilSecUniGet() {				
+		StringBuilder ret = new StringBuilder();		
+		for(Map.Entry<String, DbSecureUniGetter> pair: appConfig.getAllSecureUniGetter().entrySet()){
+			DbSecureUniGetter dbUniGetter1 = pair.getValue();			
+			ret.append(pair.getKey()+"---------------"+dbUniGetter1.getExecutedFunctionName()+" --- "+dbUniGetter1.getFunctParamByWebParam()+" ---\n\n\n");
+		}		
+		return ret.toString();		
+	}
+	
 
+	/**
+	 * <p> Утилита: рефрешинг кэша из [routing db secure exec]</p>
+	 * @author Иванов И.
+	 * @version 1.0	 	 
+	 */
+	@RequestMapping(value = "util/cache/secureUniGet/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String utilSecRefreshUniGet() {		
+		StringBuilder ret = new StringBuilder();
+		DbSecureUniGetter dbUniGetter = null;
+		List<IContract> res = null;
+		try {
+			res = appConfig.getRemoteLogService().getAllMsg(new DbSecureUniGetter());
+		} catch (Exception e) {
+			ret.append(e.getMessage()+"\n\n\n");
+		}		
+		for(IContract msg: res){		
+			dbUniGetter = (DbSecureUniGetter)msg;
+			appConfig.setSecureUniGetter(dbUniGetter);	
+			dbUniGetter.setHibernateParamsMap(dbUniGetter.getHibernateParamsMap());
+			dbUniGetter.setAppConfig(appConfig);
+		}
+						
+		for(Map.Entry<String, DbSecureUniGetter> pair: appConfig.getAllSecureUniGetter().entrySet()){
+			DbSecureUniGetter dbUniGetter1 = pair.getValue();			
+			ret.append(pair.getKey()+"---------------"+dbUniGetter1.getExecutedFunctionName()+" --- "+dbUniGetter1.getFunctParamByWebParam()+" ---\n\n\n");
+		}
+		
+		return ret.toString();		
+	}
+	
+
+	
+	/**
+	 * <p> Утилита: получить список имен логинов из кэша </p>
+	 * <p> Внутренняя настроечная таблица: [logins] </p>
+	 * @return возвращает JSON</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 */
+	@RequestMapping(value = "util/cache/logins", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String utilLogins() {						
+		return appConfig.getLogins().toString();
+	}
+	
+	
+	/**
+	 * <p> Утилита: рефрешинг кэша из [logins] </p> 
+	 * @return возвращает JSON</p>
+	 * @author Иванов И.
+	 * @version 1.0	 
+	 */
+	@RequestMapping(value = "util/cache/logins/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String utilRefreshLogins() {			 		
+		try {
+			List<IContract> res5 = appConfig.getRemoteLogService().getAllMsg(new Login());	
+			appConfig.cleanupLogins();
+			for(IContract msg: res5){
+				Login login = (Login)msg;
+				appConfig.setLoginHashMap(login.getLogin(), login);				
+				customFilter.setAppConfig(appConfig);				
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		return appConfig.getLogins().toString();
+	}
+	
+	
 
 	/**
 	 * <p> Утилита: получение статуса было ли отправлено сообщение из шины </p>
@@ -245,7 +334,7 @@ public class SyncUtilController {
 	 * @param juuid - текст, пример "B36B560F-607C-41E3-BB83-3D9A2F5984F6" 
 	 */
 	@RequestMapping(value = "util/log/success", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonLogSuccessGet(@RequestParam(value = "eventId", required = false) String eventId,
+	public @ResponseBody String utilLogSuccess(@RequestParam(value = "eventId", required = false) String eventId,
 												  @RequestParam(value = "juuid", required = false) String juuid) {								
 
 		StringBuilder sql = null;
@@ -274,7 +363,7 @@ public class SyncUtilController {
 	 * @param juuid - текст, пример "B36B560F-607C-41E3-BB83-3D9A2F5984F6" 
 	 */
 	@RequestMapping(value = "util/log/err", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonLogErrGet(@RequestParam(value = "eventId", required = false) String eventId,
+	public @ResponseBody String utilLogErr(@RequestParam(value = "eventId", required = false) String eventId,
 												  @RequestParam(value = "juuid", required = false) String juuid) {								
 
 		StringBuilder sql = null;
@@ -304,7 +393,7 @@ public class SyncUtilController {
 	 * @param juuid - текст, пример "B36B560F-607C-41E3-BB83-3D9A2F5984F6" 
 	 */
 	@RequestMapping(value = "util/log/hot", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonLogHotGet(@RequestParam(value = "eventId", required = false) String eventId,
+	public @ResponseBody String utilHots(@RequestParam(value = "eventId", required = false) String eventId,
 												  @RequestParam(value = "juuid", required = false) String juuid) {								
 
 		StringBuilder sql = null;
@@ -336,7 +425,7 @@ public class SyncUtilController {
 	 * @version 1.0	 
 	 */
 	@RequestMapping(value = "util/cache/timeouts", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonTimeoutsGet() {		
+	public @ResponseBody String utilTimeouts() {		
 		StringBuilder ret = new StringBuilder();
 		
 		ret.append("front_sync_read_timeout:"+appConfig.timeoutPolicies.getFrontSyncReadTimeout()+"\n\n\n");
@@ -355,7 +444,7 @@ public class SyncUtilController {
 	 * @version 1.0	 	 
 	 */
 	@RequestMapping(value = "/util/cache/timeouts/refresh", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
-	public @ResponseBody String jsonRefresTimeoutsGet() {		
+	public @ResponseBody String utilRefreshTimeouts() {		
 		StringBuilder ret = new StringBuilder();
 		
 		List<IContract> res3 = null;
@@ -379,10 +468,5 @@ public class SyncUtilController {
 		return ret.toString();		
 	}
 	
-	
-	
-	
-	
-	
-	
+
 }

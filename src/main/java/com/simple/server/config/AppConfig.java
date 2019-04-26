@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
+import com.simple.server.domain.contract.DbSecureUniGetter;
 import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.Login;
@@ -81,6 +82,7 @@ public class AppConfig {
 	ConcurrentHashMap<String,RedirectRouting> redirectRoutingsHashMap = new ConcurrentHashMap<String, RedirectRouting>();		
 	ConcurrentHashMap<String, String> sessionFactories = new ConcurrentHashMap<String, String>();
 	ConcurrentHashMap<String, DbUniGetter> dbUniGetHashMap= new ConcurrentHashMap<String, DbUniGetter>();	
+	ConcurrentHashMap<String, DbSecureUniGetter> dbSecureUniGetHashMap= new ConcurrentHashMap<String, DbSecureUniGetter>();	
 	ConcurrentHashMap<String, Login> loginHashMap= new ConcurrentHashMap<String, Login>();		
 	
 	private LinkedBlockingQueue<IContract> queueDirtyPlainText = new LinkedBlockingQueue<>(100);
@@ -123,6 +125,16 @@ public class AppConfig {
 		this.redirectRoutingsHashMap.put(routing.getMethodName(), routing);		
 	}
 	
+	
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+	// @@@@@@@@@@@@@@@ Logins  		 @@@@@@@@@@@@@@@
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+	
+	
+	public void cleanupLogins(){
+		this.loginHashMap.clear();		
+	}
+	
 	public void setLoginHashMap(String key, Login login){
 		this.loginHashMap.put(key, login);		
 	}
@@ -133,13 +145,17 @@ public class AppConfig {
 	
 	public List<String> getLogins(){	
 		List<String> res = new ArrayList<String>(); 
-		for (Map.Entry<String, Login> entry : loginHashMap.entrySet()) {
-		    System.out.println(entry.getKey() + "/" + entry.getValue());
+		for (Map.Entry<String, Login> entry : loginHashMap.entrySet()) {		    
 		    res.add(entry.getKey());
 		}
 		return res;
 	}
 	
+	
+	
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+	// @@@@@@@@@@@@@@@ DB Uni Getter @@@@@@@@@@@@@@@
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
 	public void setdbUniGetHashMap(DbUniGetter dbUniGetter){
 		this.dbUniGetHashMap.put(dbUniGetter.getMethod(), dbUniGetter);		
 	}
@@ -161,7 +177,36 @@ public class AppConfig {
 		DbUniGetter dbUniGetter = getdbUniGetHashMap(method);
 		return DbUniGetter.runDbStatement(dbUniGetter, method, params);		
 	}
+	
 
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// @@@@@@@@@@@@@@@ DB Secure Uni Getter @@@@@@@@@@@@@@@
+	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	
+	public void setSecureUniGetter(DbSecureUniGetter dbUniGetter){
+		this.dbSecureUniGetHashMap.put(dbUniGetter.getMethod(), dbUniGetter);		
+	}
+	
+	public DbSecureUniGetter getSecureUniGetter(String method){
+		return this.dbSecureUniGetHashMap.get(method);
+	}
+
+	public ConcurrentHashMap<String, DbSecureUniGetter> getAllSecureUniGetter(){
+		return this.dbSecureUniGetHashMap;
+	}
+	
+	public String runSecureUniStatement(String method,  Map<String, String> params) {
+		DbSecureUniGetter dbUniGetter = getSecureUniGetter(method);
+		return DbSecureUniGetter.runDbStatement(dbUniGetter, method, params);		
+	}
+	
+	public String runDbSecureUniStatement(String method,  String params) {
+		DbSecureUniGetter dbUniGetter = getSecureUniGetter(method);
+		return DbSecureUniGetter.runDbStatement(dbUniGetter, method, params);		
+	}
+	
+	
+	
+	
 	public ApplicationContext getApplicationContext() {
 		return ctx;
 	}

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.simple.server.config.AppConfig;
 import com.simple.server.controller.CustomFilter;
+import com.simple.server.domain.contract.DbSecureUniGetter;
 import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.Login;
@@ -62,9 +63,11 @@ public class LoadConfigTask  extends AbstractTask {
 		List<IContract> res3 = null;
 		List<IContract> res4 = null;
 		List<IContract> res5 = null;
+		List<IContract> res6 = null;
 		RedirectRouting redirect = null;
 		SessionFactory sf = null;
 		DbUniGetter dbUniGetter = null;
+		DbSecureUniGetter dbSecureUniGetter = null;
 		Login login = null;
 				
 		setDeactivateMySelfAfterTaskDone(true);
@@ -120,6 +123,23 @@ public class LoadConfigTask  extends AbstractTask {
 						dbUniGetter.getEndpointId(),
 						dbUniGetter.getExecutedFunctionName(),
 						dbUniGetter.getFunctParamByWebParam()
+						));
+			}
+			
+			
+			System.out.println("Waiting for db secure uni getter..");
+			res6 = appConfig.getRemoteLogService().getAllMsg(new DbSecureUniGetter());
+			System.out.println("db secure uni getter size: "+res6.size());
+			for(IContract msg: res6){
+				dbSecureUniGetter = (DbSecureUniGetter)msg;
+				appConfig.setSecureUniGetter(dbSecureUniGetter);	
+				dbSecureUniGetter.setHibernateParamsMap(dbSecureUniGetter.getHibernateParamsMap());
+				dbSecureUniGetter.setAppConfig(appConfig);
+				System.out.println(String.format("detail: %s %s %s %s", 
+						dbSecureUniGetter.getMethod(), 
+						dbSecureUniGetter.getEndpointId(),
+						dbSecureUniGetter.getExecutedFunctionName(),
+						dbSecureUniGetter.getFunctParamByWebParam()
 						));
 			}
 			

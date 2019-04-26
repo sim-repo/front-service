@@ -10,15 +10,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.simple.server.config.AppConfig;
-import com.simple.server.domain.contract.Login;
+import com.simple.server.config.JwtStatusType;
 import com.simple.server.security.PasswordUtils;
-
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -42,19 +37,28 @@ public class CustomFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         
-        try {
-	        if (PasswordUtils.isAuthentication(req, appConfig)) {
-	        	if (PasswordUtils.isExpired(req, appConfig) == false ) {
-	        		chain.doFilter(request, response);
-	        	} else {
-	        		resp.sendRedirect("/front/sync/expired");
-	        	}
-	        } else {        	
-	        	resp.sendRedirect("/front/sync/unauth");        	
-	        }
+        try {	        
+    		JwtStatusType status = PasswordUtils.isAuthentication(req, appConfig);
+			switch (status){
+				case Authorized: 
+					chain.doFilter(request, response);
+					break;
+				case Expired:
+					resp.sendRedirect("/front/sync/expired");
+					break;
+				case UnAuhorized:
+					resp.sendRedirect("/front/sync/unauth");
+					break;	
+				case InternalServerError:
+					resp.sendRedirect("/front/sync/internalServerError");					
+					break;
+				case RevokeToken:
+					resp.sendRedirect("/front/sync/revokeToken");					
+					break;
+			}
         } 
         catch (ExpiredJwtException err) {
-        	resp.sendRedirect("/front/sync/unauth");
+        	resp.sendRedirect("/front/sync/expired");
         }
         catch (MalformedJwtException err) {
         	resp.sendRedirect("/front/sync/unauth");
