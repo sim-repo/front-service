@@ -217,8 +217,7 @@ public class DbUniGetter extends ALogContract {
 				sqlStatement.append(funcParamKeys.get(i)+"="+funcParamValues.get(i)+","); 
 	        }
 			sqlStatement.deleteCharAt(sqlStatement.length()-1);
-		}				
-		System.out.println(sqlStatement.toString());		
+		}					
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
 	
@@ -245,7 +244,6 @@ public class DbUniGetter extends ALogContract {
 	        }
 			sqlStatement.deleteCharAt(sqlStatement.length()-1);
 		}				
-		System.out.println(sqlStatement.toString());		
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
 	
@@ -276,7 +274,6 @@ public class DbUniGetter extends ALogContract {
 	
 	private static String runFlatJSON(DbUniGetter getter, String sql, String endpointId) {
 		String res = null;
-		System.out.println(endpointId+ " : "+sql);
 		try {
 			res = getter.appConfig.getRemoteService().getFlatJson(sql,
 					endpointId != null ? endpointId : getter.appConfig.getDefaultEndpointByGroupId(getter.appConfig.navGroupId));

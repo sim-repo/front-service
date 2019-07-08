@@ -11,6 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.simple.server.lifecycle.BasePhaser;
 import com.simple.server.lifecycle.Deactivator;
 import com.simple.server.mediators.CommandType;
@@ -19,6 +22,7 @@ import com.simple.server.mediators.Subscriber;
 import com.simple.server.statistics.Statistic;
 import com.simple.server.statistics.time.Timing;
 import com.simple.server.tasks.states.State;
+import com.simple.server.util.MyLogger;
 
 
 public abstract class AbstractTask extends Observable implements Task, Callable, Observer {    
@@ -33,8 +37,7 @@ public abstract class AbstractTask extends Observable implements Task, Callable,
     protected CommandType onBeforeStartTask;
     protected CommandType onAfterTaskDone;
     protected CommandType onRuntimeError;
-    protected BasePhaser basePhaser;
-    
+    protected BasePhaser basePhaser; 
     
     @Override
 	public void setExecutor(ExecutorService executor) {
@@ -133,7 +136,7 @@ public abstract class AbstractTask extends Observable implements Task, Callable,
             }
 
         }catch (Exception e){
-            e.printStackTrace();
+        	MyLogger.error(getClass(), e);        	
         }finally {
             lock.unlock();
         }
@@ -153,7 +156,6 @@ public abstract class AbstractTask extends Observable implements Task, Callable,
 
     @Override
     public Object call() throws Exception {
-        System.out.println(this);
         
         while(!executor.isShutdown()){
             try {            	
@@ -162,7 +164,7 @@ public abstract class AbstractTask extends Observable implements Task, Callable,
                     wakeup.await();     
                 }
             }catch (Exception e) {
-                e.printStackTrace();
+            	MyLogger.error(getClass(), e);   
             }finally {
                 lock.unlock();
             }
@@ -186,6 +188,7 @@ public abstract class AbstractTask extends Observable implements Task, Callable,
                     setIsActive(false);
                 }
             }catch (Exception e){
+            	MyLogger.error(getClass(), e);   
                 setChanged();
                 notifyObservers(getOnRuntimeError());
 

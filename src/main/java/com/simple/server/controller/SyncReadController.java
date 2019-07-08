@@ -4,8 +4,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,12 +19,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,26 +37,13 @@ import com.simple.server.domain.contract.BusFilterGroup;
 import com.simple.server.domain.contract.BusReportItem;
 import com.simple.server.domain.contract.BusReportMsg;
 import com.simple.server.domain.contract.BusTagTemplate;
-import com.simple.server.domain.contract.DbUniGetter;
 import com.simple.server.domain.contract.IContract;
-import com.simple.server.domain.contract.Login;
-import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.StatusMsg;
-import com.simple.server.http.HttpImpl;
-import com.simple.server.security.PasswordUtils;
 import com.simple.server.util.DateTimeConverter;
-import com.simple.server.util.MutableHttpServletRequest;
+import com.simple.server.util.MyLogger;
 import com.simple.server.util.ObjectConverter;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import jdk.nashorn.internal.parser.Token;
-
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.commons.lang3.ArrayUtils;
-import com.simple.server.util.MutableHttpServletRequest;
 
 
 @Controller
@@ -69,37 +52,7 @@ public class SyncReadController {
 	@Autowired
 	private AppConfig appConfig;
 	
-		private static final Logger logger = LogManager.getLogger(SyncReadController.class);
-	
-		static final long EXPIRATIONTIME = 864_000_000; // 10 days
-	    
-	    static final String SECRET = "ThisIsASecret";
-	     
-	    static final String TOKEN_PREFIX = "Bearer";
-	     
-	    static final String HEADER_STRING = "Authorization";
-	    
 
-	
-	
-	private void logInput(String url, ResponseEntity<String> res) {
-		String bodySubstring = "null";
-		
-		if (res != null && res.getBody() != null) {
-			if (res.getBody().length() > 50 ) {
-				bodySubstring = res.getBody().substring(0, 49);
-			} else 
-				if (res.getBody().length() > 1) {
-					bodySubstring = res.getBody().substring(0, 1);				
-				}
-		}
-		
-		logger.debug(String.format("SyncCtrl %s,  %s, thread id: %s , body: %s", System.currentTimeMillis(), url,  Thread.currentThread().getId(), bodySubstring));
-	}
-	
-	
-
-	
 	/**
 	 * <p> ЛК: Источник данных BTX: изменение пароля через POST-запрос </p>
 	 * @author Иванов И.
@@ -121,7 +74,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getBusMsgService().retranslate(key, body);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res.getBody();
@@ -164,7 +117,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getBusMsgService().retranslate(key, params);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res.getBody();
@@ -212,7 +165,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -238,7 +191,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -632,7 +585,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1).toString(), endpointId );
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -723,7 +676,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1).toString(), endpointId );
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -754,8 +707,8 @@ public class SyncReadController {
 			navisionDatabase = new String(converted, StandardCharsets.UTF_8);
 		}
 		String params = String.format("?navClientId=%s&navisionDatabase=%s", navClientId, navisionDatabase);
-		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);
-		logInput(key+params, res);
+		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);		
+		//MyLogger.logResponse(getClass(), key+params, res);
 		return res;
 	}
 
@@ -798,7 +751,7 @@ public class SyncReadController {
 		
 		String params = String.format("?navClientId=%s&navisionDatabase=%s", navClientId, navisionDatabase);
 		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, params);		
-		logInput(key+params, res);
+		//MyLogger.logResponse(getClass(), key+params, res);
 		return res;
 	}
 
@@ -856,7 +809,7 @@ public class SyncReadController {
 
 		String key = "/sync/get/json/bpm/manager";
 		ResponseEntity<String> res = appConfig.getBusMsgService().retranslate(key, "");
-		logInput(key, res);
+		//MyLogger.logResponse(getClass(), key, res);
 		return res;
 	}
 
@@ -883,7 +836,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatXml(sql.toString(), 
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -924,7 +877,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatXml(sql.toString(), 
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -958,7 +911,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatXml(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -994,7 +947,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		
@@ -1029,7 +982,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));			
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1057,22 +1010,15 @@ public class SyncReadController {
 			@RequestParam(value = "companyName", required = true) String companyName,
 			@RequestParam(value = "endpointId", required = false) String endpointId
 			) {
-		try {
-			
-			System.out.println( System.currentTimeMillis());
-			logger.debug(String.format("/sync/get/json/nav/item/custPrices 1 %s,  thread id: %s ", System.currentTimeMillis(), Thread.currentThread().getId()));
+		try {					
 			StringBuilder sql = new StringBuilder(String.format(
 					"EXEC [dbo].[web_getCustomerPrice] @CustNo='%s', @PriceDate='%s', @ItemNo='%s', @CompanyName='%s'",
-					custNo, DateTimeConverter.dateToSQLFormat(priceDate), itemNo, companyName));
-			
-			
+					custNo, DateTimeConverter.dateToSQLFormat(priceDate), itemNo, companyName));						
 			String res = appConfig.getRemoteService().getFlatJson(sql.toString(),
-					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));		
-			logger.debug(String.format("/sync/get/json/nav/item/custPrices 4 %s,  thread id: %s ", System.currentTimeMillis(), Thread.currentThread().getId()));
-			System.out.println( System.currentTimeMillis());
+					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));					
 			return res;
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 	}
@@ -1099,7 +1045,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatXml(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1123,7 +1069,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatXml("EXEC [dbo].[web_xml_getItemCatalog]", 
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1149,7 +1095,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1175,7 +1121,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1203,7 +1149,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1235,7 +1181,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1301,7 +1247,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1330,7 +1276,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1358,7 +1304,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1384,7 +1330,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1427,7 +1373,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1).toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1455,7 +1401,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1478,7 +1424,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1502,7 +1448,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1525,7 +1471,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getComplexJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1569,7 +1515,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getComplexJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1603,7 +1549,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJsonFirstObj(json.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1627,7 +1573,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1650,7 +1596,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1673,7 +1619,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1696,7 +1642,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1719,7 +1665,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1741,7 +1687,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1762,7 +1708,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1785,7 +1731,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1807,7 +1753,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1829,7 +1775,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1851,7 +1797,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1874,7 +1820,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1897,7 +1843,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1919,7 +1865,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1941,7 +1887,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1964,7 +1910,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -1986,7 +1932,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2008,7 +1954,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2030,7 +1976,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2052,7 +1998,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2075,7 +2021,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2097,7 +2043,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2119,7 +2065,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2142,7 +2088,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2164,7 +2110,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2187,7 +2133,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2210,7 +2156,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2233,7 +2179,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2255,7 +2201,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2278,7 +2224,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2301,7 +2247,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;
@@ -2366,7 +2312,7 @@ public class SyncReadController {
 		}
 
 		catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return new ResponseEntity<String>(res, responseHeaders, HttpStatus.OK);
 	}
@@ -2393,7 +2339,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));							
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;	
@@ -2419,7 +2365,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));			
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;	
@@ -2481,7 +2427,7 @@ public class SyncReadController {
 			res = appConfig.getRemoteService().getFlatJson(sql.substring(0, sql.length() - 1).toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));			
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;	
@@ -2502,7 +2448,7 @@ public class SyncReadController {
 		try {
 			return appConfig.getReaderService().getAllTags();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return null;
 	}
@@ -2512,7 +2458,7 @@ public class SyncReadController {
 		try {
 			return appConfig.getReaderService().getAllClassificator();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return null;
 	}
@@ -2523,7 +2469,7 @@ public class SyncReadController {
 		try {
 			return appConfig.getReaderService().getClassificatorBySqlCriteria("level like '1'");
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return null;
 	}
@@ -2536,7 +2482,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2549,7 +2495,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2562,7 +2508,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2575,7 +2521,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2587,7 +2533,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteLogService().getAllMsg(new BusFilterGroup());
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2600,7 +2546,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2613,7 +2559,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2626,7 +2572,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2639,7 +2585,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2650,7 +2596,7 @@ public class SyncReadController {
 		try {
 			return appConfig.getReaderService().getAllTags();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return null;
 	}
@@ -2671,7 +2617,7 @@ public class SyncReadController {
 			result = appConfig.getRemoteService().getFlatJson(sqlTemplate + " " + sqlParam.toString(),
 					appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return result;
 	}
@@ -2684,7 +2630,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2697,7 +2643,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 		}
 		return res;
 	}
@@ -2712,7 +2658,7 @@ public class SyncReadController {
 			appConfig.getRemoteService().insert(msg);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return new StatusMsg("406", e.toString());
 		}
 		return appConfig.getSuccessStatus();
@@ -2727,7 +2673,7 @@ public class SyncReadController {
 			msg.setIsDirectInsert(true);
 			appConfig.getRemoteService().delete(msg);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return new StatusMsg("406", e.toString());
 		}
 		return appConfig.getSuccessStatus();
@@ -2742,7 +2688,7 @@ public class SyncReadController {
 		try {
 			res = appConfig.getRemoteService().getFlatJson(sql, appConfig.LOG_ENDPOINT_NAME);
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e); 
 			return e.getMessage();
 		}
 		return res;

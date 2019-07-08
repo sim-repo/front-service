@@ -16,11 +16,16 @@
 	
 	<!-- Enables the Spring MVC @Controller programming model -->
 	<annotation-driven />
-
+	
+	<!--  <context:property-placeholder location="config/config.properties" /> -->
 	<resources mapping="/resources/**" location="/resources/" />
 	
+	<beans:bean
+	  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	  <beans:property name="location" value="file:///C:/Program Files/Java/env_vars/config.properties" />	    
+	</beans:bean>
 	
-	
+	 
 	<!-- Thymeleaf -->
 	
 	<beans:bean id="templateResolver" class="org.thymeleaf.spring4.templateresolver.SpringResourceTemplateResolver">

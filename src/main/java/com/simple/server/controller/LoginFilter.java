@@ -40,13 +40,8 @@ public class LoginFilter implements Filter {
     	
     	HttpServletRequest httpRequest = (HttpServletRequest) request;
         MutableHttpServletRequest mutableRequest = new MutableHttpServletRequest(httpRequest);
-        System.out.println(mutableRequest.getHeaderNames());
-        System.out.println("----------");;
         String username = mutableRequest.getHeader("username");
-        System.out.println(username);;
-        System.out.println("----------");;
         if (username != null) {
-        	System.out.println("CATCH "+username);;
         	String token = getNewAuthentication(username);
         	mutableRequest.putHeader("Authorization", token);        	
         }
@@ -55,7 +50,6 @@ public class LoginFilter implements Filter {
 
     @Override
     public void destroy() {
-    	System.out.println("Destroy!!!!!!!!!!");
     }
     
  

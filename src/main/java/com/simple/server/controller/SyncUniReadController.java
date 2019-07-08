@@ -113,7 +113,6 @@ public class SyncUniReadController {
 	        String val = request.getParameter(parameterName);
 	        if (ObjectConverter.isNumeric(val) == false) {
 		        if (Base64.isBase64(val)) {	
-		        	System.out.println(val);
 					byte[] converted = Base64.decodeBase64(val.getBytes());
 					val = new String(converted, StandardCharsets.UTF_8);
 				} 

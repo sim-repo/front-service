@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,14 @@ public class TaskRunner  {
     CopyOnWriteArrayList<ExecutorService> executors = new CopyOnWriteArrayList<>();
     ConcurrentHashMap<Object, List<Task>> tasks = new ConcurrentHashMap<>();
  
-    
+    @Value("${front.task.dispatch.num :1}")
+	private Integer busDispatcherNum;
+	
+	@Value("${front.task.bridgeSender.num :1}")
+	private Integer bridgeSenderNum;
+
+	@Value("${front.task.logSender.num :1}")
+	private Integer logSenderkNum;
 
 	public <T extends AbstractTask> List<T> newRunTask(Mediator mediator, Class<T> clazz, int num) throws Exception{
     	 ReentrantLock lock = new ReentrantLock();
@@ -99,9 +107,9 @@ public class TaskRunner  {
      
     public void initProcessing() {        
         	try {		    		            	
-        		newRunTask(appConfig.getMediator(), DispatcherTask.class, 2);
-        		newRunTask(appConfig.getMediator(), ClientSenderTask.class, 2);  
-        		newRunTask(appConfig.getMediator(), LogSenderTask.class, 2);
+        		newRunTask(appConfig.getMediator(), DispatcherTask.class, busDispatcherNum);
+        		newRunTask(appConfig.getMediator(), ClientSenderTask.class, bridgeSenderNum);  
+        		newRunTask(appConfig.getMediator(), LogSenderTask.class, logSenderkNum);
         		newRunTask(appConfig.getMediator(), LoadConfigTask.class, 1);
         		//appConfig.getPerfomancerStat().addStatToTask(Processing.class);
                 // Timing timing = new Timing(appConfig.getPerfomancerStat());        		         		

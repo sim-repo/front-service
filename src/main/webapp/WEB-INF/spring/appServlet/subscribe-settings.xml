@@ -20,7 +20,8 @@
 	<import resource="integration-common-settings.xml"/>	
 	
     <bean id="connectionFactory" class="org.apache.activemq.spring.ActiveMQConnectionFactory">
-        <property name="brokerURL" value="tcp://localhost:61616"/>
+        <property name="brokerURL" value="${amq.connectionFactory}"/>
+        								  	
     </bean>                                  
 	           
    

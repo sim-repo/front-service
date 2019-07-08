@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Observable;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,9 @@ public class ClientSenderTask extends AbstractTask {
 		
 	@Autowired
 	private AppConfig appConfig;
+	
+	@Value("${front.allow.log2db :1}")
+	private Integer frontAllowLog2Db;
 	
 	private static Integer MAX_NUM_ELEMENTS = 1000;
     private List<IContract> list = new ArrayList<>();
@@ -57,8 +61,9 @@ public class ClientSenderTask extends AbstractTask {
         for (IContract msg : list) {        	
         	Thread.currentThread().sleep(Timing.getTimeMaxSleep());		   
         	msg.setRequestInDatetime(DateTimeConverter.getCurDate());      
-     
-        	appConfig.getLogBusMsgService().transformAndSend(appConfig.getChannelBusLog(), (AContract)msg);          	
+        	if (frontAllowLog2Db == 1) {        		
+        		appConfig.getLogBusMsgService().transformAndSend(appConfig.getChannelBusLog(), (AContract)msg);
+        	}        	
         	appConfig.getBusMsgService().send(msg.getChannel(), msg.getMethodHandler(), msg);		
         }
                    

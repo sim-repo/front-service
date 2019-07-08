@@ -53,7 +53,8 @@ public class LogSenderTask extends AbstractTask {
         appConfig.getQueueAdminMsg().drainTo(list, MAX_NUM_ELEMENTS);  
                
         for (IContract msg : list) {        	
-        	Thread.currentThread().sleep(Timing.getTimeMaxSleep());	     	        	
+        	Thread.currentThread().sleep(Timing.getTimeMaxSleep());	     	
+        	System.out.println("front::LogSenderTask: 3");
         	appConfig.getLogBusMsgService().sendAsIs(appConfig.getChannelBusLog(), msg);          		
         }
                    

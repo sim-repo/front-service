@@ -1,7 +1,10 @@
 package com.simple.server.controller;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -21,6 +24,7 @@ import com.simple.server.domain.contract.StatusMsg;
 import com.simple.server.domain.contract.SuccessPubMsg;
 import com.simple.server.domain.contract.UniMinMsg;
 import com.simple.server.statistics.time.Timing;
+import com.simple.server.util.MyLogger;
 
 @SuppressWarnings("static-access")
 @RestController
@@ -28,8 +32,18 @@ import com.simple.server.statistics.time.Timing;
 public class TestController {
 	@Autowired
 	private AppConfig appConfig;
-	
-	
+
+	@RequestMapping(value = "/log/error", method = RequestMethod.GET, produces = "text/plain;charset=UTF-8")
+	public @ResponseBody String DividedByZeroGet() {
+		try {
+			MyLogger.info(getClass(), "Hello Moscow!");
+			System.out.println(1/0);
+		} catch(Exception e) {
+			 MyLogger.error(getClass(), e);			
+		}
+		
+		return "ok";
+	}
 	
 	
 	
@@ -47,7 +61,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);				
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -65,7 +79,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -83,7 +97,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(confirm);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -104,7 +118,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(in);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -125,7 +139,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(in);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -136,7 +150,7 @@ public class TestController {
 			Thread.currentThread().sleep(Timing.getTimeMaxSleep());			
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 		}
 	}
 
@@ -153,7 +167,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -171,7 +185,7 @@ public class TestController {
 			appConfig.getQueueDirtyMsg().put(msg);
 			return appConfig.getSuccessStatus();
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return new StatusMsg("406", e.toString());
 		}
 	}
@@ -200,7 +214,7 @@ public class TestController {
 			res = appConfig.getRemoteService().getFlatJson(sql.toString(),
 					endpointId != null ? endpointId : appConfig.getDefaultEndpointByGroupId(appConfig.navGroupId));
 		} catch (Exception e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);	
 			return e.getMessage();
 		}
 		return res;

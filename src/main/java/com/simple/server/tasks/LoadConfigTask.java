@@ -18,6 +18,7 @@ import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.domain.contract.SessionFactory;
 import com.simple.server.domain.contract.TimeoutPolicies;
 import com.simple.server.mediators.CommandType;
+import com.simple.server.util.MyLogger;
 
 
 @SuppressWarnings("static-access")
@@ -30,8 +31,6 @@ public class LoadConfigTask  extends AbstractTask {
 	
 	@Autowired
 	private CustomFilter customFilter;
-	
-	
 	
 	
     private List<IContract> list = new ArrayList<>();
@@ -75,93 +74,91 @@ public class LoadConfigTask  extends AbstractTask {
 		Thread.currentThread().sleep(5000);		
 		
 		try {			
-			
-			System.out.println(">>>> FRONT-SERVICE::::LOADING CONFIG >>>>");
-			
-			System.out.println("Waiting for redirect routings ..");	
-			res = appConfig.getRemoteLogService().getAllMsg(new RedirectRouting());
-			System.out.println("redirect routings size: "+res.size());
-			for(IContract msg: res){
-				redirect = (RedirectRouting)msg;
-				appConfig.setRedirectRoutingHashMap(redirect);				
-			}
-			
-			System.out.println("Waiting for session factories ..");		
-			res2 = appConfig.getRemoteLogService().getAllMsg(new SessionFactory());
-			System.out.println("session factories size: "+res2.size());
-			for(IContract msg: res2){
-				sf = (SessionFactory)msg;
-				if(sf.getDefaultEndpointId())
-					appConfig.setSessionFactories(sf.getEndpointGroupId(), sf.getEndpointId());			
-			}
-			
-			System.out.println("Waiting for timeout policies..");
-			res3 = appConfig.getRemoteLogService().getAllMsg(new TimeoutPolicies());
-			System.out.println("timeout policies size: "+res3.size());
-			for(IContract msg: res3){			
-				appConfig.timeoutPolicies = (TimeoutPolicies)msg;	
-				System.out.println(String.format("timeout: %s %s %s %s %s %s", 
-						appConfig.timeoutPolicies.getFrontSyncReadTimeout(), 
-						appConfig.timeoutPolicies.getFrontSyncConnectionRequestTimeout(),
-						appConfig.timeoutPolicies.getFrontSyncConnectionTimeout(),
-						appConfig.timeoutPolicies.getBackAsyncReadTimeout(),
-						appConfig.timeoutPolicies.getBackAsyncConnectionTimeout(),
-						appConfig.timeoutPolicies.getBackAsyncConnectionRequestTimeout()
-						));
-			}
-			
-			System.out.println("Waiting for db uni getter..");
-			res4 = appConfig.getRemoteLogService().getAllMsg(new DbUniGetter());
-			System.out.println("db uni getter size: "+res4.size());
-			for(IContract msg: res4){
-				dbUniGetter = (DbUniGetter)msg;
-				appConfig.setdbUniGetHashMap(dbUniGetter);	
-				dbUniGetter.setHibernateParamsMap(dbUniGetter.getHibernateParamsMap());
-				dbUniGetter.setAppConfig(appConfig);
-				System.out.println(String.format("detail: %s %s %s %s", 
-						dbUniGetter.getMethod(), 
-						dbUniGetter.getEndpointId(),
-						dbUniGetter.getExecutedFunctionName(),
-						dbUniGetter.getFunctParamByWebParam()
-						));
-			}
-			
-			
-			System.out.println("Waiting for db secure uni getter..");
-			res6 = appConfig.getRemoteLogService().getAllMsg(new DbSecureUniGetter());
-			System.out.println("db secure uni getter size: "+res6.size());
-			for(IContract msg: res6){
-				dbSecureUniGetter = (DbSecureUniGetter)msg;
-				appConfig.setSecureUniGetter(dbSecureUniGetter);	
-				dbSecureUniGetter.setHibernateParamsMap(dbSecureUniGetter.getHibernateParamsMap());
-				dbSecureUniGetter.setAppConfig(appConfig);
-				System.out.println(String.format("detail: %s %s %s %s", 
-						dbSecureUniGetter.getMethod(), 
-						dbSecureUniGetter.getEndpointId(),
-						dbSecureUniGetter.getExecutedFunctionName(),
-						dbSecureUniGetter.getFunctParamByWebParam()
-						));
-			}
-			
-			System.out.println("Waiting for logins ..");
-			res5 = appConfig.getRemoteLogService().getAllMsg(new Login());
-			System.out.println("login size: "+res5.size());
-			for(IContract msg: res5){
-				login = (Login)msg;
+			MyLogger.warnStartBlock(getClass(), "SERVICE START CONFIG...");
+			MyLogger.warnSingleHeader(getClass(),"PROPERTY:;SIZE:;");													
+			res = appConfig.getRemoteLogService().getAllMsg(new RedirectRouting());						
+			if(res != null && res.size() > 0) {
+				MyLogger.warn(getClass(), "Redirect Routes;"+res.size());
 				
-				appConfig.setLoginHashMap(login.getLogin(), login);				
-				customFilter.setAppConfig(appConfig);
-				System.out.println(String.format("detail: %s", 
-						login.getLogin() 						
-						));
+				for(IContract msg: res){
+					redirect = (RedirectRouting)msg;
+					appConfig.setRedirectRoutingHashMap(redirect);				
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: redirect routes is null!");
+			}
+				
+			res2 = appConfig.getRemoteLogService().getAllMsg(new SessionFactory());
+			if(res2 != null && res2.size() > 0) {
+				MyLogger.warn(getClass(),"Session Factories;"+res2.size());
+				for(IContract msg: res2){
+					sf = (SessionFactory)msg;
+					if(sf.getDefaultEndpointId())
+						appConfig.setSessionFactories(sf.getEndpointGroupId(), sf.getEndpointId());			
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: session factories is null!");
 			}
 			
-			System.out.println("<<<< FRONT-SERVICE::::LOADING CONFIG COMPLETE <<<<<");
+						
+			res3 = appConfig.getRemoteLogService().getAllMsg(new TimeoutPolicies());
+			if(res3 != null && res3.size() > 0) {
+				for(IContract msg: res3){			
+					appConfig.timeoutPolicies = (TimeoutPolicies)msg;
+					MyLogger.warn(getClass(), "Timeout Policies;"+res3.size());				
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: timeout policies is null!");
+			}
+			
+			
+			res4 = appConfig.getRemoteLogService().getAllMsg(new DbUniGetter());
+			if(res4 != null && res4.size() > 0) {
+				MyLogger.warn(getClass(),"DB Uni Getter;"+res4.size());
+				for(IContract msg: res4){
+					dbUniGetter = (DbUniGetter)msg;
+					appConfig.setdbUniGetHashMap(dbUniGetter);	
+					dbUniGetter.setHibernateParamsMap(dbUniGetter.getHibernateParamsMap());
+					dbUniGetter.setAppConfig(appConfig);									
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: db uni getter is null!");
+			}
+			
+			
+	
+			res6 = appConfig.getRemoteLogService().getAllMsg(new DbSecureUniGetter());			
+			if(res6 != null && res6.size() > 0) {
+				MyLogger.warn(getClass(),"DB Secure Uni Getter;"+res6.size());
+				for(IContract msg: res6){
+					dbSecureUniGetter = (DbSecureUniGetter)msg;
+					appConfig.setSecureUniGetter(dbSecureUniGetter);	
+					dbSecureUniGetter.setHibernateParamsMap(dbSecureUniGetter.getHibernateParamsMap());
+					dbSecureUniGetter.setAppConfig(appConfig);			
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: db secure uni getter is null!");
+			}
+			
+			
+			
+			res5 = appConfig.getRemoteLogService().getAllMsg(new Login());
+			if(res5 != null && res5.size() > 0) {
+				MyLogger.warn(getClass(),"Logins;"+res5.size());
+				for(IContract msg: res5){
+					login = (Login)msg;					
+					appConfig.setLoginHashMap(login.getLogin(), login);				
+					customFilter.setAppConfig(appConfig);					
+				}
+			} else {
+				MyLogger.error(getClass(), "SERVICE START CONFIG: logins is null!");
+			}
+			
+			
+			MyLogger.warnEndBlock(getClass(), "SERVICE COMPLETE CONFIG...");
 		} catch (Exception e) {
-			e.printStackTrace();
-		}		      			
-        throwToStatistic(list.size());
+			MyLogger.error(getClass(), e);			
+		}		      			        
         list.clear();
     }
-   	
 }

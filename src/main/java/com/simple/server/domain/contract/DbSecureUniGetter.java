@@ -214,8 +214,7 @@ private AppConfig appConfig;
 	        }
 			sqlStatement.deleteCharAt(sqlStatement.length()-1);
 		}		
-		sqlStatement.append(", @_secured = 1");
-		System.out.println(sqlStatement.toString());		
+		sqlStatement.append(", @_secured = 1");	
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
 	
@@ -242,7 +241,7 @@ private AppConfig appConfig;
 	        }
 		}
 		sqlStatement.append(", @_secured = 1");
-		System.out.println(sqlStatement.toString());		
+		//System.out.println(sqlStatement.toString());		
 		return execStatement(getter, sqlStatement.toString(), getter.endpointId);		
 	}
 	
@@ -273,7 +272,6 @@ private AppConfig appConfig;
 	
 	private static String runFlatJSON(DbSecureUniGetter getter, String sql, String endpointId) {
 		String res = null;
-		System.out.println(endpointId+ " : "+sql);
 		try {
 			res = getter.appConfig.getRemoteService().getFlatJson(sql,
 					endpointId != null ? endpointId : getter.appConfig.getDefaultEndpointByGroupId(getter.appConfig.navGroupId));

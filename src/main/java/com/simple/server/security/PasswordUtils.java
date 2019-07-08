@@ -11,12 +11,15 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import com.simple.server.config.AppConfig;
 import com.simple.server.config.JwtStatusType;
 import com.simple.server.domain.contract.Login;
 import com.simple.server.util.DateTimeConverter;
+import com.simple.server.util.MyLogger;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -26,8 +29,7 @@ public class PasswordUtils {
     private static final Random RANDOM = new SecureRandom();
     private static final String ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final int ITERATIONS = 10000;
-    private static final int KEY_LENGTH = 256;
-    
+    private static final int KEY_LENGTH = 256;  
 	
     static final Integer EXPIRATIONDAY = 2; // 10 days
     
@@ -84,8 +86,6 @@ public class PasswordUtils {
     	}
 		String token = request.getHeader(HEADER_STRING);
 		Date expirationDate = Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token.replace(TOKEN_PREFIX, "")).getBody().getExpiration();  
-		System.out.println(expirationDate);
-		System.out.println(untilDate);  
 			
 		if (expirationDate.compareTo(untilDate) > 0) {	    	
 	     	return JwtStatusType.Expired;
@@ -121,8 +121,11 @@ public class PasswordUtils {
 	                .setExpiration(expire)
 	                .signWith(SignatureAlgorithm.HS512, SECRET).compact();	
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			 StackTraceElement[] stktrace = e.getStackTrace(); 
+			 StringBuilder builder = new StringBuilder();
+			 builder.append(stktrace[0].toString());			 
+			 builder.append(" : "+e.getLocalizedMessage());	         
+	         MyLogger.error(PasswordUtils.class, builder.toString());	
 		}
     	return "";
     	
@@ -149,8 +152,7 @@ public class PasswordUtils {
  	                .setExpiration(expire)
  	                .signWith(SignatureAlgorithm.HS512, SECRET).compact();		
  		} catch (Exception e) {
- 			// TODO Auto-generated catch block
- 			e.printStackTrace();
+ 			MyLogger.error(PasswordUtils.class, e); 			
  		}
         return "";
     }

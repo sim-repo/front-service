@@ -51,6 +51,7 @@ import com.simple.server.config.AppConfig;
 import com.simple.server.config.ContentType;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.util.HttpNotFoundException;
+import com.simple.server.util.MyLogger;
 import com.simple.server.util.ObjectConverter;
 
 import org.springframework.http.MediaType;
@@ -62,7 +63,6 @@ public class HttpImpl {
 	@Autowired
 	private AppConfig appConfig;
 
-	private static final Logger logger = LogManager.getLogger(HttpImpl.class);
 
 	private static String convertBody(ContentType contentType, String body) throws Exception {
 		String converted = null;
@@ -78,6 +78,8 @@ public class HttpImpl {
 		return converted;
 	}
 
+	
+	
 	private static String getValidContentType(ContentType contentType) {
 		if (ContentType.XmlPlainText.equals(contentType)) {
 			return "text/plain";
@@ -90,11 +92,15 @@ public class HttpImpl {
 		}
 	}
 
+	
+	
 	private static void checkHttpResonseStatusCode(String url, int statusCode) throws HttpNotFoundException {
 		if (statusCode < 200 || statusCode > 300)
 			throw new HttpNotFoundException(String.format("HTTP Error, url: < %s >, status code: %s", url, statusCode));
 	}
 
+	
+	
 	private static HttpHeaders createHeaders(ContentType contentType) {
 		return new HttpHeaders() {
 			{
@@ -106,6 +112,8 @@ public class HttpImpl {
 			}
 		};
 	}
+	
+	
 
 	private static HttpHeaders createHeaders(String contentType) {
 		return new HttpHeaders() {
@@ -114,6 +122,8 @@ public class HttpImpl {
 			}
 		};
 	}
+	
+	
 
 	public static HttpHeaders createHeaders() {
 		return new HttpHeaders() {
@@ -123,6 +133,8 @@ public class HttpImpl {
 		};
 	}
 
+	
+	
 	private static HttpHeaders createHeaders(String username, String password) {
 		return new HttpHeaders() {
 			{
@@ -134,6 +146,8 @@ public class HttpImpl {
 			}
 		};
 	}
+	
+	
 
 	private ClientHttpRequestFactory getSimpleClientHttpRequestFactory() {
 		HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
@@ -143,6 +157,9 @@ public class HttpImpl {
 		clientHttpRequestFactory.setReadTimeout(appConfig.timeoutPolicies.getFrontSyncReadTimeout());
 		return clientHttpRequestFactory;
 	}
+	
+	
+	
 
 	private ClientHttpRequestFactory getClientHttpRequestFactory() {
 		int timeout = 5000;
@@ -152,11 +169,17 @@ public class HttpImpl {
 		CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
 		return new HttpComponentsClientHttpRequestFactory(client);
 	}
+	
+	
+	
 
 	private static ClientHttpRequestFactory getSimplestClientHttpRequestFactory() {
 		CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 		return new HttpComponentsClientHttpRequestFactory(httpClient);
 	}
+	
+	
+	
 
 	@SuppressWarnings("all")
 	public ResponseEntity<String> doPostNTLM(String url, String body, String contentType) throws Exception {
@@ -225,13 +248,18 @@ public class HttpImpl {
 			return new ResponseEntity<String>(sBody, createHeaders(), HttpStatus.valueOf(httpCode));
 
 		} catch (HttpNotFoundException e) {
+			MyLogger.error(getClass(), e.getMessage());
 			throw new HttpNotFoundException(String.format("HttpImpl NTLM: %s", e.getMessage()));
 		} catch (Exception e) {
+			MyLogger.error(getClass(), e.getMessage());
 			throw new Exception(String.format("HttpImpl NTLM: %s", e.getMessage()));
 		} finally {
 			httpclient.getConnectionManager().shutdown();
 		}
 	}
+	
+	
+	
 
 	public ResponseEntity<String> doPost(RedirectRouting redirect, String body) throws Exception {
 
@@ -245,8 +273,6 @@ public class HttpImpl {
 			if (!(redirect.getUseAuth() == null)) {
 				useAuth = redirect.getUseAuth();
 			}
-			logger.debug(String.format("HttpImpl PRE %s  , %s, thread id: %s", redirect.getUrl(), body,
-					Thread.currentThread().getId()));
 			String convertedBody = HttpImpl.convertBody(redirect.getResponseContentType(), body);
 			if (useAuth) {
 				res = doPostNTLM(redirect.getUrl(), convertedBody,
@@ -272,17 +298,15 @@ public class HttpImpl {
 					return response;
 
 				} catch (RestClientException e) {
-					logger.debug(
-							String.format("[HttpImpl] [ERR] %s %s, thread id: %s , thread name:  %s", uri.toString(),
-									e.getMessage(), Thread.currentThread().getId(), Thread.currentThread().getName()));
+					MyLogger.error(getClass(),
+							String.format("%s %s", uri.toString(), e.getMessage()));
 					throw new HttpNotFoundException(
-							String.format("HttpImpl, url: < %s >, %s", e.getMessage(), uri.toString()));
+							String.format("url: < %s >, %s", e.getMessage(), uri.toString()));
 				}
 			}
 
 		} catch (HttpStatusCodeException e) {
-			logger.debug(String.format("front: HttpImpl ERR %s , %s", redirect.getUrl(), Thread.currentThread().getId(),
-					e.getMessage()));
+			MyLogger.error(getClass(), String.format("%s , %s", redirect.getUrl(), e.getMessage()));
 			String json = e.getResponseBodyAsString();
 			if (ObjectConverter.isValidXML(json)) {
 				json = ObjectConverter.xmlToJson(json);
@@ -291,6 +315,9 @@ public class HttpImpl {
 		}
 		return res;
 	}
+	
+	
+	
 
 	public ResponseEntity<String> get(RedirectRouting redirect, String params) throws Exception {
 
@@ -304,24 +331,9 @@ public class HttpImpl {
 			if (!(redirect.getUseAuth() == null)) {
 				useAuth = redirect.getUseAuth();
 			}
-			logger.debug(String.format("HttpImpl PRE %s  , thread id: %s", redirect.getUrl() + params,
-					Thread.currentThread().getId()));
 			if (useAuth) {
 				res = doGetNTLM(redirect.getUrl() + params,
-						getValidContentType(ContentType.fromValue(redirect.getContentType())));
-				
-//				String body = res.getBody();
-//				Document doc = ObjectConverter.convertXmlStringToDocument(body);
-//				doc = ObjectConverter.removeAllAttributes(doc);
-//				String newXml = ObjectConverter.convertDocumentToXmlString(doc);
-//				String xml = ObjectConverter.removeNameSpacesFromXmlString(body);
-//				System.out.println(xml);
-//				
-//				HttpHeaders headers = res.getHeaders();
-//				String convertedBody = HttpImpl.convertBody(redirect.getResponseContentType(), xml);
-			//	res = new ResponseEntity<String>(convertedBody, headers, HttpStatus.OK);
-				
-				
+						getValidContentType(ContentType.fromValue(redirect.getContentType())));				
 			} else {
 				URI uri = new URI(redirect.getUrl() + params);
 				RestTemplate restTemplate = new RestTemplate(getSimpleClientHttpRequestFactory());
@@ -331,8 +343,7 @@ public class HttpImpl {
 				res = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
 			}
 		} catch (HttpStatusCodeException e) {
-			logger.debug(String.format("front: HttpImpl ERR %s , %s", redirect.getUrl() + params,
-					Thread.currentThread().getId(), e.getMessage()));
+			MyLogger.error(getClass(), String.format("%s , %s", redirect.getUrl()+params, e.getMessage()));
 			String json = e.getResponseBodyAsString();
 			if (ObjectConverter.isValidXML(json)) {
 				json = ObjectConverter.xmlToJson(json);
@@ -341,6 +352,9 @@ public class HttpImpl {
 		}
 		return res;
 	}
+	
+	
+	
 
 	@SuppressWarnings("all")
 	public ResponseEntity<String> doGetNTLM(String url, String contentType) throws Exception {

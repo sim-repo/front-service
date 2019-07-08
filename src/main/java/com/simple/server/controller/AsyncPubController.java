@@ -46,7 +46,7 @@ public class AsyncPubController {
 			msg.setChannel(appConfig.getChannelBusBridge());
 			msg.setLogClass(BusPubMsg.class);
 			msg.setOperationType(OperationType.PUB);
-			
+			System.out.println("1");
 			appConfig.getQueueDirtyMsg().put(msg);
 			return new ResponseEntity<String>("", headers, HttpStatus.OK);
 		} catch (Exception e) {
@@ -68,7 +68,6 @@ public class AsyncPubController {
 			msg.setLogClass(BusPubMsg.class);
 			msg.setOperationType(OperationType.PUB);
 			Integer i = cnt.getAndIncrement(); 
-			System.out.println(i);
 			appConfig.getQueueDirtyMsg().put(msg);
 			return new ResponseEntity<String>("", headers, HttpStatus.OK);
 		} catch (Exception e) {

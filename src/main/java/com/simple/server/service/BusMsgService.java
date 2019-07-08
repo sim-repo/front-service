@@ -1,6 +1,7 @@
 package com.simple.server.service;
 
 import java.util.Date;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -16,6 +17,7 @@ import com.simple.server.config.AppConfig;
 import com.simple.server.domain.contract.IContract;
 import com.simple.server.domain.contract.RedirectRouting;
 import com.simple.server.http.HttpImpl;
+import com.simple.server.util.MyLogger;
 import com.simple.server.util.ObjectConverter;
 
 @Service("busMsgService")
@@ -66,7 +68,8 @@ public class BusMsgService  implements IMsgService{
 	
 	@Override
 	public @ResponseBody ResponseEntity<String> retranslate(String key, String params){
-		
+		UUID uuid = UUID.randomUUID();
+		MyLogger.info(getClass(), uuid.toString()+";"+key+";"+params); 
 		ResponseEntity<String> res = null;
 		try {
 			if (appConfig.getRedirectRoutingsHashMap().containsKey(key)) {								
@@ -78,12 +81,15 @@ public class BusMsgService  implements IMsgService{
 				}
 			}
 		} catch (HttpStatusCodeException e) {
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);
+			MyLogger.info(getClass(), uuid.toString()+";error");
 			return new ResponseEntity<String>(e.getResponseBodyAsString(), HttpImpl.createHeaders(), e.getStatusCode());
 		} catch(Exception e){
-			e.printStackTrace();
+			MyLogger.error(getClass(), e);
+			MyLogger.info(getClass(), uuid.toString()+";error");
 			return new ResponseEntity<String>(e.getMessage(), HttpImpl.createHeaders(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+		MyLogger.info(getClass(), uuid.toString()+";success");
 		return res;
 	}
 	
